@@ -12,6 +12,10 @@ Primera fase de Capitol Hub: base interna con Supabase, Auth, RLS, layout proteg
 
 Para staging en Vercel + Supabase remoto, ver [DEPLOYMENT_STAGING.md](./DEPLOYMENT_STAGING.md).
 
+## Deploy automatico con Vercel
+
+Para conectar GitHub con Vercel y habilitar deploys automaticos desde `main` y Preview Deployments desde branches/PRs, ver [docs/vercel-github-deploy.md](./docs/vercel-github-deploy.md).
+
 ## Alcance de esta fase
 
 - Auth con Supabase email/password.
