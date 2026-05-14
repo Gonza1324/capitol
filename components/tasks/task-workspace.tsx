@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ColumnDef,
@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { Eye, KanbanSquare, List, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye, KanbanSquare, List, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,11 @@ type Filters = {
   date: string;
   special: "" | "overdue" | "mine" | "unassigned";
 };
+
+type SortConfig = {
+  key: "due_date" | "priority";
+  direction: "asc" | "desc";
+} | null;
 
 export function TaskWorkspace({
   tasks,
@@ -110,6 +115,16 @@ export function TaskWorkspace({
 
 function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage: string }) {
   const [isPending, startTransition] = useTransition();
+  const [sort, setSort] = useState<SortConfig>(null);
+  const sortedTasks = useMemo(() => sortTasks(tasks, sort), [sort, tasks]);
+
+  const toggleSort = useCallback((key: "due_date" | "priority") => {
+    setSort((current) => {
+      if (current?.key === key) return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+      return { key, direction: key === "priority" ? "desc" : "asc" };
+    });
+  }, []);
+
   const columns = useMemo<ColumnDef<TaskListRow>[]>(
     () => [
       {
@@ -123,9 +138,17 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       },
       { header: "Cliente", cell: ({ row }) => row.original.client_name || "-" },
       { header: "Estado", cell: ({ row }) => <TaskStatusBadge status={row.original.status} /> },
-      { header: "Prioridad", cell: ({ row }) => <TaskPriorityBadge priority={row.original.priority} /> },
+      {
+        id: "priority",
+        header: () => <SortableHeader label="Prioridad" active={sort?.key === "priority"} direction={sort?.direction} onClick={() => toggleSort("priority")} />,
+        cell: ({ row }) => <TaskPriorityBadge priority={row.original.priority} />
+      },
       { header: "Responsables", cell: ({ row }) => <BadgeList values={row.original.assignees.map((item) => item.label)} empty="Sin responsable" /> },
-      { header: "Fecha limite", cell: ({ row }) => row.original.due_date || "-" },
+      {
+        id: "due_date",
+        header: () => <SortableHeader label="Fecha limite" active={sort?.key === "due_date"} direction={sort?.direction} onClick={() => toggleSort("due_date")} />,
+        cell: ({ row }) => row.original.due_date || "-"
+      },
       { header: "Actualizada", cell: ({ row }) => formatDate(row.original.updated_at) },
       {
         header: "Acciones",
@@ -148,9 +171,9 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         )
       }
     ],
-    [isPending]
+    [isPending, sort, toggleSort]
   );
-  const table = useReactTable({ data: tasks, columns, getCoreRowModel: getCoreRowModel() });
+  const table = useReactTable({ data: sortedTasks, columns, getCoreRowModel: getCoreRowModel() });
 
   if (!tasks.length) return <EmptyState message={emptyMessage} />;
 
@@ -174,6 +197,56 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       </table>
     </div>
   );
+}
+
+function SortableHeader({
+  label,
+  active,
+  direction,
+  onClick
+}: {
+  label: string;
+  active: boolean;
+  direction?: "asc" | "desc";
+  onClick: () => void;
+}) {
+  const Icon = !active ? ArrowUpDown : direction === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <button type="button" className="inline-flex items-center gap-1.5 rounded-sm font-medium hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={onClick}>
+      <span>{label}</span>
+      <Icon className="h-3.5 w-3.5" />
+    </button>
+  );
+}
+
+function sortTasks(tasks: TaskListRow[], sort: SortConfig) {
+  if (!sort) return tasks;
+  const direction = sort.direction === "asc" ? 1 : -1;
+  return [...tasks].sort((a, b) => {
+    if (sort.key === "priority") {
+      const priorityDiff = priorityRank(a.priority) - priorityRank(b.priority);
+      if (priorityDiff) return priorityDiff * direction;
+      return a.title.localeCompare(b.title);
+    }
+
+    if (!a.due_date && !b.due_date) return a.title.localeCompare(b.title);
+    if (!a.due_date) return 1;
+    if (!b.due_date) return -1;
+
+    const dateDiff = dueDateRank(a.due_date) - dueDateRank(b.due_date);
+    if (dateDiff) return dateDiff * direction;
+    return a.title.localeCompare(b.title);
+  });
+}
+
+function priorityRank(priority: string) {
+  const ranks: Record<string, number> = { low: 1, medium: 2, high: 3, urgent: 4 };
+  return ranks[priority] || 0;
+}
+
+function dueDateRank(value: string | null) {
+  if (!value) return Number.MAX_SAFE_INTEGER;
+  return new Date(`${value}T00:00:00`).getTime();
 }
 
 function TaskKanban({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage: string }) {
