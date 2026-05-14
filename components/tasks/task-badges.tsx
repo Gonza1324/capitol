@@ -6,14 +6,8 @@ export function TaskStatusBadge({ status }: { status: string }) {
 }
 
 export function TaskPriorityBadge({ priority }: { priority: string }) {
-  const className =
-    priority === "urgent"
-      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-      : priority === "high"
-        ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
-        : "";
-
-  return <Badge variant={priority === "urgent" || priority === "high" ? "outline" : "muted"} className={className}>{priority}</Badge>;
+  const variant = priority === "urgent" ? "danger" : priority === "high" ? "warning" : "muted";
+  return <Badge variant={variant}>{priority}</Badge>;
 }
 
 export function isOverdue(dueDate: string | null, status: string) {

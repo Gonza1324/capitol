@@ -16,6 +16,10 @@ Para staging en Vercel + Supabase remoto, ver [DEPLOYMENT_STAGING.md](./DEPLOYME
 
 Para conectar GitHub con Vercel y habilitar deploys automaticos desde `main` y Preview Deployments desde branches/PRs, ver [docs/vercel-github-deploy.md](./docs/vercel-github-deploy.md).
 
+## UX/UI
+
+Para criterios visuales alineados con la identidad publica de Capitol, ver [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md).
+
 ## Alcance de esta fase
 
 - Auth con Supabase email/password.

@@ -35,6 +35,26 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))"
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          muted: "hsl(var(--success-muted))"
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          muted: "hsl(var(--warning-muted))"
+        },
+        danger: {
+          DEFAULT: "hsl(var(--danger))",
+          muted: "hsl(var(--danger-muted))"
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          muted: "hsl(var(--info-muted))"
+        },
+        capitol: {
+          accent: "hsl(var(--capitol-accent))",
+          "accent-muted": "hsl(var(--capitol-accent-muted))"
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"

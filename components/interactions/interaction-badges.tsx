@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 
 export function InteractionTypeBadge({ type }: { type: string }) {
-  const variant = type === "call" || type === "in_person_meeting" ? "success" : type === "important_email" || type === "whatsapp" ? "warning" : "muted";
+  const variant = type === "call" || type === "in_person_meeting" ? "info" : type === "important_email" || type === "whatsapp" ? "warning" : "muted";
   return <Badge variant={variant}>{type}</Badge>;
 }
 
