@@ -15,8 +15,8 @@ export async function Sidebar() {
   }
 
   return (
-    <aside className="flex min-h-screen w-full flex-col border-r border-white/10 bg-[#111111] md:w-60">
-      <div className="flex h-16 items-center border-b border-white/10 px-4">
+    <aside className="flex w-full flex-col border-r border-white/10 bg-[#111111] md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:overflow-hidden md:w-60">
+      <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-4">
         <Image
           src="/capitol-logo-white.png"
           alt="Capitol"
@@ -27,7 +27,7 @@ export async function Sidebar() {
         />
       </div>
       <SidebarNav />
-      <div className="border-t border-white/10 p-4">
+      <div className="shrink-0 border-t border-white/10 p-4">
         <p className="truncate text-xs text-white/55">{user.email}</p>
         <form action="/auth/sign-out" method="post" className="mt-3">
           <Button variant="outline" size="sm" className="w-full border-white/15 bg-transparent text-white/75 hover:bg-white/10 hover:text-white">
