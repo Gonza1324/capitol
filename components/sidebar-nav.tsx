@@ -15,7 +15,6 @@ import {
   SquareCheckBig,
   Users
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -40,20 +39,18 @@ export function SidebarNav() {
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
-          <Button
+          <Link
             key={item.href}
-            asChild
-            variant="ghost"
+            href={item.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "h-9 w-full justify-start gap-3 px-3 text-white/72 hover:bg-white/10 hover:text-white",
+              "flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-white/78 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-capitol-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]",
               active && "bg-capitol-accent text-primary hover:bg-capitol-accent hover:text-primary"
             )}
           >
-            <Link href={item.href}>
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          </Button>
+            <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-white/70")} />
+            <span>{item.label}</span>
+          </Link>
         );
       })}
     </nav>
