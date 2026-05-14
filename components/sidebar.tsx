@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -10,7 +11,6 @@ import {
   Library,
   Search,
   Settings,
-  Shield,
   SquareCheckBig,
   Users
 } from "lucide-react";
@@ -44,14 +44,15 @@ export async function Sidebar() {
 
   return (
     <aside className="flex min-h-screen w-full flex-col border-r bg-card md:w-60">
-      <div className="flex h-16 items-center gap-3 border-b px-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Shield className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">Capitol Hub</p>
-          <p className="mt-1 text-xs text-muted-foreground">Workspace interno</p>
-        </div>
+      <div className="flex h-16 items-center border-b bg-primary px-4">
+        <Image
+          src="/capitol-logo-white.png"
+          alt="Capitol"
+          width={800}
+          height={201}
+          priority
+          className="h-auto w-44"
+        />
       </div>
       <nav className="flex-1 space-y-1 p-2">
         {items.map((item) => (
