@@ -98,7 +98,7 @@ export function DocumentForm({
             disabled={Boolean(lockedSourceType) || isEdit}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-70"
           >
-            {documentSourceTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+            {documentSourceTypes.map((type) => <option key={type} value={type}>{type === "upload" ? "Archivo" : "Solo link externo"}</option>)}
           </select>
           {(lockedSourceType || isEdit) ? <input type="hidden" {...form.register("source_type")} /> : null}
         </Field>
@@ -129,16 +129,21 @@ export function DocumentForm({
         </Field>
         {sourceType === "external_link" ? (
           <Field label="URL externa" error={form.formState.errors.external_url?.message}>
-            <Input placeholder="https://..." {...form.register("external_url")} />
+            <Input placeholder="https://drive.google.com/..." {...form.register("external_url")} />
           </Field>
         ) : (
-          <Field label={isEdit ? "Archivo" : "Archivo"}>
-            {isEdit ? (
-              <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">El reemplazo de archivo queda pendiente para una fase posterior.</div>
-            ) : (
-              <Input name="file" type="file" />
-            )}
-          </Field>
+          <>
+            <Field label="Archivo">
+              {isEdit ? (
+                <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">El reemplazo de archivo queda pendiente para una fase posterior.</div>
+              ) : (
+                <Input name="file" type="file" />
+              )}
+            </Field>
+            <Field label="Link externo opcional" error={form.formState.errors.external_url?.message}>
+              <Input placeholder="https://drive.google.com/..." {...form.register("external_url")} />
+            </Field>
+          </>
         )}
         <Field label="Descripcion" wide>
           <Textarea {...form.register("description")} />

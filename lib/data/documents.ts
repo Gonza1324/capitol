@@ -25,6 +25,7 @@ export type DocumentRow = {
 
 export type DocumentView = DocumentRow & {
   open_url: string | null;
+  file_open_url: string | null;
   uploader_name: string | null;
   entity_label: string;
   entity_href: string;
@@ -92,15 +93,17 @@ export async function getDocumentById(id: string) {
 export async function enrichDocuments(rows: DocumentRow[]) {
   const supabase = await createClient();
   return Promise.all(rows.map(async (row) => {
-    let openUrl = row.external_url || row.file_url || null;
+    let fileOpenUrl = row.file_url || null;
     if (row.source_type === "upload" && row.storage_path) {
       const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(row.storage_path, 60 * 60);
-      openUrl = data?.signedUrl || openUrl;
+      fileOpenUrl = data?.signedUrl || fileOpenUrl;
     }
+    const openUrl = row.source_type === "upload" ? fileOpenUrl : row.external_url;
     const profile = first(row.profiles);
     return {
       ...row,
       open_url: openUrl,
+      file_open_url: fileOpenUrl,
       uploader_name: profile?.full_name || profile?.email || null,
       entity_label: `${entityTypeLabel(row.entity_type)} ${row.entity_id.slice(0, 8)}`,
       entity_href: entityHref(row.entity_type, row.entity_id)

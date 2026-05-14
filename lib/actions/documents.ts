@@ -33,7 +33,7 @@ export async function createDocumentRecord(formData: FormData, redirectTo?: stri
   let mimeType: string | null = null;
   let size: number | null = null;
   let fileUrl: string | null = null;
-  let externalUrl: string | null = values.external_url;
+  const externalUrl: string | null = values.external_url;
 
   if (values.source_type === "upload") {
     if (!(file instanceof File) || file.size === 0) {
@@ -49,7 +49,6 @@ export async function createDocumentRecord(formData: FormData, redirectTo?: stri
     mimeType = file.type || null;
     size = file.size;
     fileUrl = storagePath;
-    externalUrl = null;
   }
 
   const { data, error } = await supabase.from("files").insert({
@@ -101,7 +100,7 @@ export async function updateDocumentRecord(id: string, formData: FormData, redir
     description: values.description,
     document_type: values.document_type,
     source_type: values.source_type,
-    external_url: values.source_type === "external_link" ? values.external_url : null,
+    external_url: values.external_url,
     url: values.source_type === "external_link" ? values.external_url : undefined,
     entity_type: values.entity_type,
     entity_id: values.entity_id

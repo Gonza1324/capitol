@@ -43,6 +43,7 @@ export default async function DocumentDetailPage({
               <Info label="Actualizacion">{formatDateTime(document.updated_at)}</Info>
               <Info label="Tamaño">{formatSize(document.size || document.size_bytes)}</Info>
               <Info label="MIME type">{document.mime_type || "-"}</Info>
+              <Info label="Link externo" wide>{document.external_url ? <a className="text-primary underline" href={document.external_url} target="_blank">{document.external_url}</a> : "-"}</Info>
               <Info label="Storage path" wide>{document.storage_path || "-"}</Info>
               <Info label="Descripcion" wide>{document.description || "-"}</Info>
             </CardContent>
@@ -52,7 +53,8 @@ export default async function DocumentDetailPage({
           <Card>
             <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {document.open_url ? <Button asChild className="w-full"><a href={document.open_url} target="_blank"><ExternalLink className="h-4 w-4" /> Abrir archivo/link</a></Button> : null}
+              {document.file_open_url ? <Button asChild className="w-full"><a href={document.file_open_url} target="_blank"><ExternalLink className="h-4 w-4" /> Abrir archivo</a></Button> : null}
+              {document.external_url ? <Button asChild className="w-full" variant="outline"><a href={document.external_url} target="_blank"><ExternalLink className="h-4 w-4" /> Abrir link externo</a></Button> : null}
               <ConfirmAction
                 label="Archivar"
                 variant="destructive"

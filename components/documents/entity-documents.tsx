@@ -48,6 +48,7 @@ export async function EntityDocuments({
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {document.open_url ? <Button asChild size="sm" variant="outline"><a href={document.open_url} target="_blank"><ExternalLink className="h-4 w-4" /> Abrir</a></Button> : null}
+                    {document.source_type === "upload" && document.external_url ? <Button asChild size="sm" variant="outline"><a href={document.external_url} target="_blank"><ExternalLink className="h-4 w-4" /> Link</a></Button> : null}
                     <Button asChild size="sm" variant="outline"><Link href={`/documents/${document.id}/edit`}>Editar</Link></Button>
                     <ConfirmAction
                       label="Archivar"
