@@ -115,7 +115,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       {
         header: "Titulo",
         cell: ({ row }) => (
-          <div>
+          <div className="min-w-72 max-w-xl">
             <Link href={`/tasks/${row.original.id}`} className="font-medium hover:underline">{row.original.title}</Link>
             {isOverdue(row.original.due_date, row.original.status) ? <p className="mt-1 text-xs text-destructive">Vencida</p> : null}
           </div>
@@ -126,7 +126,6 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       { header: "Prioridad", cell: ({ row }) => <TaskPriorityBadge priority={row.original.priority} /> },
       { header: "Responsables", cell: ({ row }) => <BadgeList values={row.original.assignees.map((item) => item.label)} empty="Sin responsable" /> },
       { header: "Fecha limite", cell: ({ row }) => row.original.due_date || "-" },
-      { header: "Creada por", cell: ({ row }) => row.original.created_by_name || "-" },
       { header: "Actualizada", cell: ({ row }) => formatDate(row.original.updated_at) },
       {
         header: "Acciones",
