@@ -6,8 +6,9 @@ Primera fase de Capitol Hub: base interna con Supabase, Auth, RLS, layout proteg
 
 1. Copiar `.env.example` a `.env.local`.
 2. Completar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Ejecutar la migracion en `supabase/migrations/001_initial_phase.sql`.
-4. Correr `npm run dev`.
+3. Completar `SUPABASE_SERVICE_ROLE_KEY` solo en entornos server-side para poder crear y editar usuarios desde Configuracion.
+4. Ejecutar la migracion en `supabase/migrations/001_initial_phase.sql`.
+5. Correr `npm run dev`.
 
 Para staging en Vercel + Supabase remoto, ver [DEPLOYMENT_STAGING.md](./DEPLOYMENT_STAGING.md).
 
@@ -17,6 +18,7 @@ Para staging en Vercel + Supabase remoto, ver [DEPLOYMENT_STAGING.md](./DEPLOYME
 - Layout protegido para usuarios autenticados.
 - CRUD operativo de clientes, contactos y tareas.
 - Modulo avanzado inicial de clientes con rubros, intereses y responsables internos.
+- Administracion de usuarios desde Configuracion para usuarios `admin`.
 - RLS por membresia de organizacion.
 
 No incluye integraciones externas ni portal de clientes.

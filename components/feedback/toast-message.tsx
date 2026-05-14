@@ -39,6 +39,8 @@ const messages: Record<string, string> = {
   document_created: "Documento creado correctamente.",
   document_updated: "Documento actualizado correctamente.",
   document_archived: "Documento archivado.",
+  user_created: "Usuario creado correctamente.",
+  user_updated: "Usuario actualizado correctamente.",
   error: "No pudimos completar la accion."
 };
 

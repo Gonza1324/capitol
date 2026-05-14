@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/page-header";
 import { ToastMessage } from "@/components/feedback/toast-message";
 import { CatalogForm } from "@/components/settings/catalog-form";
+import { UserManagement } from "@/components/settings/user-management";
 import { createCatalogItem } from "@/lib/actions/clients";
 import { createClient } from "@/lib/supabase/server";
+import type { UserRole } from "@/lib/supabase/types";
 
 export default async function SettingsPage({
   searchParams
@@ -14,10 +16,14 @@ export default async function SettingsPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
-  const [{ data: industries }, { data: interests }, { data: profiles }] = await Promise.all([
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  const [{ data: industries }, { data: interests }, { data: profiles }, { data: currentProfile }] = await Promise.all([
     supabase.from("industries").select("id, name, is_active").order("name"),
     supabase.from("interests").select("id, name, is_active").order("name"),
-    supabase.from("profiles").select("id, full_name, email, role").order("email")
+    supabase.from("profiles").select("id, full_name, email, role").order("email"),
+    user ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null })
   ]);
 
   return (
@@ -37,21 +43,10 @@ export default async function SettingsPage({
           items={(interests || []) as Array<{ id: string; name: string; is_active: boolean }>}
           form={<CatalogForm kind="interest" action={createCatalogItem} />}
         />
-        <Card>
-          <CardHeader>
-            <CardTitle>Usuarios y roles</CardTitle>
-            <CardDescription>Vista minima de usuarios creados en Supabase Auth.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {((profiles || []) as Array<{ id: string; full_name: string | null; email: string | null; role: string }>).map((profile) => (
-              <div key={profile.id} className="rounded-md border p-3 text-sm">
-                <p className="font-medium">{profile.full_name || profile.email}</p>
-                <p className="text-xs text-muted-foreground">{profile.email}</p>
-                <Badge className="mt-2" variant="muted">{profile.role}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <UserManagement
+          profiles={(profiles || []) as Array<{ id: string; full_name: string | null; email: string | null; role: UserRole }>}
+          canManageUsers={currentProfile?.role === "admin"}
+        />
       </div>
     </>
   );

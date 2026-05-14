@@ -8,14 +8,15 @@ Este deploy no agrega funcionalidades nuevas. Solo publica la app actual y conec
 
 ## Variables de entorno
 
-La aplicacion usa solo estas variables:
+La aplicacion usa estas variables:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-No se usa `SUPABASE_SERVICE_ROLE_KEY` en el codigo actual. No cargarla en Vercel salvo que en una fase futura se agregue un cliente admin server-side.
+`SUPABASE_SERVICE_ROLE_KEY` se usa solo del lado servidor para crear y editar usuarios desde Configuracion. No debe exponerse como variable `NEXT_PUBLIC_` ni importarse en componentes cliente.
 
 Tampoco se usa actualmente `APP_URL`, `NEXT_PUBLIC_APP_URL` ni `SITE_URL` desde el codigo. Las URLs de Auth se configuran en Supabase.
 
@@ -23,8 +24,8 @@ Tampoco se usa actualmente `APP_URL`, `NEXT_PUBLIC_APP_URL` ni `SITE_URL` desde 
 
 - `lib/supabase/server.ts` usa `createServerClient` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - `lib/supabase/middleware.ts` refresca sesion con cookies usando las mismas variables publicas.
-- No hay cliente con service role.
-- No hay imports de service role en componentes client-side.
+- `lib/supabase/admin.ts` usa service role solo en server actions de administracion de usuarios.
+- No hay imports de service role en componentes client-side; los componentes llaman server actions.
 - RLS queda como barrera principal de acceso a datos.
 
 ## Supabase staging
@@ -32,7 +33,7 @@ Tampoco se usa actualmente `APP_URL`, `NEXT_PUBLIC_APP_URL` ni `SITE_URL` desde 
 1. Crear un proyecto nuevo en Supabase para staging.
 2. Copiar `Project URL`.
 3. Copiar `anon public key`.
-4. No copiar `service_role` al proyecto Vercel, porque no se usa.
+4. Copiar `service_role` al proyecto Vercel como `SUPABASE_SERVICE_ROLE_KEY` para habilitar administracion de usuarios desde Configuracion.
 5. Instalar e iniciar sesion en Supabase CLI si hace falta:
 
 ```bash
@@ -130,6 +131,7 @@ npm install
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-public-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 ```
 
 7. Deploy.
