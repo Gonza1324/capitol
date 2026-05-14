@@ -43,8 +43,8 @@ export async function Sidebar() {
   }
 
   return (
-    <aside className="flex min-h-screen w-full flex-col border-r bg-card md:w-72">
-      <div className="flex h-16 items-center gap-3 border-b px-5">
+    <aside className="flex min-h-screen w-full flex-col border-r bg-card md:w-60">
+      <div className="flex h-16 items-center gap-3 border-b px-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Shield className="h-4 w-4" />
         </div>
@@ -53,7 +53,7 @@ export async function Sidebar() {
           <p className="mt-1 text-xs text-muted-foreground">Workspace interno</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 p-2">
         {items.map((item) => (
           <Button key={item.href} asChild variant="ghost" className={cn("w-full justify-start gap-3")}>
             <Link href={item.href}>
