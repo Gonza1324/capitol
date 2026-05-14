@@ -143,7 +143,7 @@ export function ClientForm({
         </div>
       </Section>
 
-      <Section title="Intereses">
+      <Section title="Issues">
         <div className="space-y-3 md:col-span-2">
           {interests.map((interest) => {
             const index = selectedInterests.findIndex((item) => item.interest_id === interest.id);
@@ -178,7 +178,7 @@ export function ClientForm({
               </div>
             );
           })}
-          {!interests.length ? <p className="text-sm text-muted-foreground">Crea intereses en Configuracion para asignarlos.</p> : null}
+          {!interests.length ? <p className="text-sm text-muted-foreground">Crea issues en Configuracion para asignarlos.</p> : null}
         </div>
       </Section>
 

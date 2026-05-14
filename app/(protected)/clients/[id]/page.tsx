@@ -282,7 +282,7 @@ export default async function ClientDetailPage({
               <Info label="Website">{detail.website ? <a className="text-primary underline" href={detail.website} target="_blank">{detail.website}</a> : "-"}</Info>
               <Info label="Drive">{detail.drive_url ? <a className="text-primary underline" href={detail.drive_url} target="_blank">Abrir carpeta</a> : "-"}</Info>
               <Info label="Rubros"><BadgeGroup values={industries.map((item) => item.name)} /></Info>
-              <Info label="Intereses"><BadgeGroup values={interests.map((item) => `${item.name} (${item.priority})`)} /></Info>
+              <Info label="Issues"><BadgeGroup values={interests.map((item) => `${item.name} (${item.priority})`)} /></Info>
               <Info label="Responsables"><BadgeGroup values={assignments.map((item) => item.role ? `${item.label} - ${item.role}` : item.label)} /></Info>
               <Info label="Actualizado">{formatDate(detail.updated_at)}</Info>
               <Info label="Descripcion" wide>{detail.description || "-"}</Info>
@@ -441,7 +441,7 @@ function ClientExecutiveSummary({
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <Info label="Rubros"><BadgeGroup values={industries} /></Info>
-          <Info label="Intereses principales"><BadgeGroup values={interests} /></Info>
+          <Info label="Issues principales"><BadgeGroup values={interests} /></Info>
           <Info label="Responsables"><BadgeGroup values={assignments} /></Info>
         </div>
       </CardContent>

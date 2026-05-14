@@ -39,7 +39,7 @@ export function CatalogForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
       <div className="space-y-2">
-        <Label>{kind === "industry" ? "Nuevo rubro" : "Nuevo interes"}</Label>
+        <Label>{kind === "industry" ? "Nuevo rubro" : "Nuevo issue"}</Label>
         <Input {...form.register("name")} placeholder={kind === "industry" ? "Energia" : "Regulacion"} />
         {form.formState.errors.name ? <p className="text-xs text-destructive">{form.formState.errors.name.message}</p> : null}
       </div>

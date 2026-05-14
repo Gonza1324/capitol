@@ -29,7 +29,7 @@ export default async function SettingsPage({
   return (
     <>
       <ToastMessage code={params.toast} />
-      <PageHeader title="Configuracion" description="Administracion minima para rubros, intereses y usuarios internos." />
+      <PageHeader title="Configuracion" description="Administracion minima para rubros, issues y usuarios internos." />
       <div className="grid gap-6 lg:grid-cols-3">
         <CatalogCard
           title="Rubros"
@@ -38,7 +38,7 @@ export default async function SettingsPage({
           form={<CatalogForm kind="industry" action={createCatalogItem} />}
         />
         <CatalogCard
-          title="Intereses"
+          title="Issues"
           description="Temas de seguimiento con prioridad por cliente."
           items={(interests || []) as Array<{ id: string; name: string; is_active: boolean }>}
           form={<CatalogForm kind="interest" action={createCatalogItem} />}

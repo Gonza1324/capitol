@@ -78,7 +78,7 @@ export default async function ClientsPage({
       <ToastMessage code={params.toast} />
       <PageHeader
         title="Clientes"
-        description="Gestion operativa de clientes, rubros, intereses y responsables."
+        description="Gestion operativa de clientes, rubros, issues y responsables."
         actions={<Button asChild><Link href="/clients/new">Nuevo cliente</Link></Button>}
       />
       <ClientTable data={clients} industries={options.industries} interests={options.interests} profiles={options.profiles} />

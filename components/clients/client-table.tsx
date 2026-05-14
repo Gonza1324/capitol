@@ -103,7 +103,7 @@ export function ClientTable({
         cell: ({ row }) => <BadgeList items={row.original.industries.map((item) => item.name)} empty="Sin rubros" />
       },
       {
-        header: "Intereses principales",
+        header: "Issues principales",
         cell: ({ row }) => <BadgeList items={row.original.interests.filter((item) => item.priority === "high").map((item) => item.name)} empty="Sin high" />
       },
       {
@@ -165,14 +165,14 @@ export function ClientTable({
       <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3 lg:grid-cols-6">
         <Input
           className="md:col-span-3 lg:col-span-2"
-          placeholder="Buscar por nombre, CUIT, rubro, interes..."
+          placeholder="Buscar por nombre, CUIT, rubro, issue..."
           value={globalFilter}
           onChange={(event) => setGlobalFilter(event.target.value)}
         />
         <FilterSelect value={filters.status} label="Estado" options={["active", "prospect", "paused", "former", "potential", "archived"]} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
         <FilterSelect value={filters.clientType} label="Tipo" options={["company", "chamber", "ngo", "person", "public_agency", "embassy", "association", "other"]} onChange={(value) => setFilters((current) => ({ ...current, clientType: value }))} />
         <FilterSelect value={filters.industryId} label="Rubro" options={industries.map((item) => ({ label: item.name, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, industryId: value }))} />
-        <FilterSelect value={filters.interestId} label="Interes" options={interests.map((item) => ({ label: item.name, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, interestId: value }))} />
+        <FilterSelect value={filters.interestId} label="Issue" options={interests.map((item) => ({ label: item.name, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, interestId: value }))} />
         <FilterSelect value={filters.assigneeId} label="Responsable" options={profiles.map((item) => ({ label: item.label, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, assigneeId: value }))} />
         <Button type="button" variant="outline" onClick={() => { setGlobalFilter(""); setFilters({ status: "", clientType: "", industryId: "", interestId: "", assigneeId: "" }); }}>
           Limpiar filtros
