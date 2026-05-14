@@ -41,6 +41,9 @@ const messages: Record<string, string> = {
   document_archived: "Documento archivado.",
   user_created: "Usuario creado correctamente.",
   user_updated: "Usuario actualizado correctamente.",
+  saved_search_created: "Busqueda guardada correctamente.",
+  saved_search_updated: "Busqueda guardada actualizada.",
+  saved_search_deleted: "Busqueda guardada eliminada.",
   error: "No pudimos completar la accion."
 };
 

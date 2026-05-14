@@ -23,6 +23,7 @@ Para conectar GitHub con Vercel y habilitar deploys automaticos desde `main` y P
 - CRUD operativo de clientes, contactos y tareas.
 - Modulo avanzado inicial de clientes con rubros, intereses y responsables internos.
 - Administracion de usuarios desde Configuracion para usuarios `admin`.
+- Busqueda global sobre clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders y documentos, con busquedas guardadas por usuario.
 - RLS por membresia de organizacion.
 
 No incluye integraciones externas ni portal de clientes.
@@ -30,6 +31,7 @@ No incluye integraciones externas ni portal de clientes.
 ## Fuera de V1
 
 - Honorarios queda fuera del alcance operativo de V1. La tabla `client_fees` puede existir en Supabase por compatibilidad con migraciones previas, pero la UI y las acciones de gestion de honorarios no se exponen en la aplicacion.
+- La busqueda global no incluye honorarios ni informacion de portal externo.
 
 ## Fase 2
 
