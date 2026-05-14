@@ -44,12 +44,14 @@ export function SidebarNav() {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-white/78 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-capitol-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]",
-              active && "bg-capitol-accent text-primary hover:bg-capitol-accent hover:text-primary"
+              "group flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-[#EDEDE8] transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-capitol-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]",
+              active && "bg-capitol-accent text-[#111111] hover:bg-capitol-accent hover:text-[#111111]"
             )}
           >
-            <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-white/70")} />
-            <span>{item.label}</span>
+            <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-[#111111]" : "text-[#D8D8D2]")} />
+            <span className={cn(active ? "text-[#111111]" : "text-[#EDEDE8] group-hover:text-white")}>
+              {item.label}
+            </span>
           </Link>
         );
       })}
