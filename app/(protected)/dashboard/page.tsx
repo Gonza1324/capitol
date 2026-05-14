@@ -69,7 +69,7 @@ export default async function DashboardPage() {
     { data: reviewReportClientRows }
   ] = await Promise.all([
     supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active").is("deleted_at", null),
-    supabase.from("tasks").select("id", { count: "exact", head: true }).in("status", ["pending", "in_progress", "in_review", "blocked"]).is("deleted_at", null),
+    supabase.from("tasks").select("id", { count: "exact", head: true }).in("status", ["pending", "in_progress", "in_review"]).is("deleted_at", null),
     supabase.from("tasks").select("id", { count: "exact", head: true }).lt("due_date", today).not("status", "in", "(completed,cancelled)").is("deleted_at", null),
     supabase.from("interactions").select("id", { count: "exact", head: true }).gte("interaction_date", weekStart).is("deleted_at", null),
     supabase.from("reports").select("id", { count: "exact", head: true }).gte("sent_at", monthStart).eq("status", "sent").is("deleted_at", null),

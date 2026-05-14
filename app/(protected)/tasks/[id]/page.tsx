@@ -19,7 +19,7 @@ type TaskDetail = {
   title: string;
   description: string | null;
   client_id: string | null;
-  status: "pending" | "in_progress" | "in_review" | "blocked" | "completed" | "cancelled";
+  status: "pending" | "in_progress" | "in_review" | "completed" | "cancelled";
   priority: string;
   due_date: string | null;
   created_by: string | null;
@@ -152,7 +152,7 @@ export default async function TaskDetailPage({
                 </form>
               )}
               <div className="grid grid-cols-2 gap-2">
-                {(["pending", "in_progress", "in_review", "blocked", "cancelled"] as const).map((status) => (
+                {(["pending", "in_progress", "in_review", "cancelled"] as const).map((status) => (
                   <form key={status} action={changeTaskStatus.bind(null, detail.id, status, detail.client_id, `/tasks/${detail.id}?toast=task_status_changed`)}>
                     <Button className="w-full" type="submit" variant="outline" size="sm">{status}</Button>
                   </form>

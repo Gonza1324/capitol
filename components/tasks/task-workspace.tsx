@@ -179,7 +179,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
 function TaskKanban({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage: string }) {
   if (!tasks.length) return <EmptyState message={emptyMessage} />;
   return (
-    <div className="grid gap-4 xl:grid-cols-6">
+    <div className="grid gap-4 xl:grid-cols-5">
       {taskStatuses.map((status) => {
         const statusTasks = tasks.filter((task) => task.status === status);
         return (

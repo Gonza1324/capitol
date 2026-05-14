@@ -19,7 +19,7 @@ const optionalDate = z
   .nullable()
   .transform((value) => value || null);
 
-export const taskStatuses = ["pending", "in_progress", "in_review", "blocked", "completed", "cancelled"] as const;
+export const taskStatuses = ["pending", "in_progress", "in_review", "completed", "cancelled"] as const;
 export const taskPriorities = ["low", "medium", "high", "urgent"] as const;
 export const recurrenceRules = ["daily", "weekly", "monthly", "custom"] as const;
 

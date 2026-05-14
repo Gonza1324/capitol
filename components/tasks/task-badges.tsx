@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 
 export function TaskStatusBadge({ status }: { status: string }) {
-  const variant = status === "completed" ? "success" : status === "blocked" || status === "cancelled" ? "warning" : "secondary";
+  const variant = status === "completed" ? "success" : status === "cancelled" ? "warning" : "secondary";
   return <Badge variant={variant}>{status}</Badge>;
 }
 

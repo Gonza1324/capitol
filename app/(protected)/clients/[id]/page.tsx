@@ -63,7 +63,7 @@ type ContactRow = {
 type ClientTaskRow = {
   id: string;
   title: string;
-  status: "pending" | "in_progress" | "in_review" | "blocked" | "completed" | "cancelled";
+  status: "pending" | "in_progress" | "in_review" | "completed" | "cancelled";
   priority: string;
   due_date: string | null;
   updated_at: string;
