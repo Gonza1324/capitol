@@ -132,11 +132,11 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         cell: ({ row }) => (
           <div className="min-w-72 max-w-xl">
             <Link href={`/tasks/${row.original.id}`} className="font-medium hover:underline">{row.original.title}</Link>
+            <p className="mt-1 text-xs text-muted-foreground">{row.original.client_name || "Sin cliente"}</p>
             {isOverdue(row.original.due_date, row.original.status) ? <p className="mt-1 text-xs text-destructive">Vencida</p> : null}
           </div>
         )
       },
-      { header: "Cliente", cell: ({ row }) => row.original.client_name || "-" },
       { header: "Estado", cell: ({ row }) => <TaskStatusBadge status={row.original.status} /> },
       {
         id: "priority",
