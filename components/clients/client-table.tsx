@@ -110,8 +110,6 @@ export function ClientTable({
         header: "Responsables",
         cell: ({ row }) => <BadgeList items={row.original.assignments.map((item) => item.label)} empty="Sin responsables" />
       },
-      { header: "Inicio", accessorKey: "start_date", cell: ({ row }) => row.original.start_date || "-" },
-      { header: "Actualizado", accessorKey: "updated_at", cell: ({ row }) => formatDate(row.original.updated_at) },
       {
         header: "Acciones",
         cell: ({ row }) => (
@@ -245,8 +243,4 @@ function FilterSelect({
       })}
     </select>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
 }

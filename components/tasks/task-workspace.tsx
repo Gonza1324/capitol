@@ -160,7 +160,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
                 <Check className="h-4 w-4" />
               </Button>
             ) : null}
-            <Button size="icon" variant="ghost" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => {
+            <Button size="icon" variant="outline" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => {
               if (!window.confirm(`Archivar ${row.original.title}?`)) return;
               startTransition(async () => { await archiveTaskRecord(row.original.id, row.original.client_id, "/tasks?toast=task_archived"); });
             }}>

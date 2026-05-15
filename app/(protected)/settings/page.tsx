@@ -39,7 +39,7 @@ export default async function SettingsPage({
     <>
       <ToastMessage code={params.toast} />
       <PageHeader title="Configuracion" description="Administracion minima para rubros, issues y usuarios internos." />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Cuenta</CardTitle>

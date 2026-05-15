@@ -43,7 +43,7 @@ export default async function ClientsPage({
       client_assignments(role, profiles(id, full_name, email))
     `)
     .is("deleted_at", null)
-    .order("updated_at", { ascending: false });
+    .order("name", { ascending: true });
 
   const clients = ((data || []) as unknown as RawClient[]).map<ClientListRow>((client) => ({
     id: client.id,
