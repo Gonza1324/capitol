@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { ToastMessage } from "@/components/feedback/toast-message";
+import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { TaskWorkspace, type TaskListRow } from "@/components/tasks/task-workspace";
+import { createTaskRecord } from "@/lib/actions/tasks";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation, getTaskFormOptions } from "@/lib/data/tasks";
 
@@ -75,7 +75,16 @@ export default async function TasksPage({
       <PageHeader
         title="Tareas"
         description="Gestion interna de pendientes, responsables y vencimientos."
-        actions={<Button asChild><Link href="/tasks/new">Nueva tarea</Link></Button>}
+        actions={
+          <TaskCreateModal
+            action={async (values) => {
+              "use server";
+              await createTaskRecord(values, "/tasks?toast=task_created");
+            }}
+            clients={options.clients}
+            profiles={options.profiles}
+          />
+        }
       />
       <TaskWorkspace tasks={tasks} clients={options.clients} profiles={options.profiles} currentUserId={user?.id || ""} />
     </>

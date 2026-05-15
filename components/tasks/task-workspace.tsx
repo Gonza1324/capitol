@@ -137,7 +137,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
           </div>
         )
       },
-      { header: "Estado", cell: ({ row }) => <TaskStatusBadge status={row.original.status} /> },
+      { header: "Estado", cell: ({ row }) => <TaskStatusSelect task={row.original} /> },
       {
         id: "priority",
         header: () => <SortableHeader label="Prioridad" active={sort?.key === "priority"} direction={sort?.direction} onClick={() => toggleSort("priority")} />,
@@ -246,6 +246,23 @@ function priorityRank(priority: string) {
 function dueDateRank(value: string | null) {
   if (!value) return Number.MAX_SAFE_INTEGER;
   return new Date(`${value}T00:00:00`).getTime();
+}
+
+function TaskStatusSelect({ task }: { task: TaskListRow }) {
+  const [isPending, startTransition] = useTransition();
+  return (
+    <select
+      className="h-9 min-w-36 rounded-md border bg-background px-2 text-xs"
+      value={task.status}
+      disabled={isPending}
+      aria-label={`Cambiar estado de ${task.title}`}
+      onChange={(event) => startTransition(async () => {
+        await changeTaskStatus(task.id, event.target.value as TaskStatus, task.client_id, "/tasks?toast=task_status_changed");
+      })}
+    >
+      {taskStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+    </select>
+  );
 }
 
 function TaskKanban({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage: string }) {
