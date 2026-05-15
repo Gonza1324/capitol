@@ -32,7 +32,7 @@ type SearchParams = {
 
 type CalendarItem = {
   id: string;
-  kind: "event" | "task";
+  kind: "event" | "task" | "interaction";
   title: string;
   date: string;
   href: string;
@@ -41,7 +41,9 @@ type CalendarItem = {
   clientName?: string | null;
   assignedTo?: string | null;
   clientId?: string | null;
+  clientIds?: string[];
   responsibleId?: string | null;
+  responsibleIds?: string[];
   interactionId?: string | null;
   taskId?: string | null;
 };
@@ -68,7 +70,7 @@ export default async function InternalCalendarPage({
   const queryStart = new Date(Math.min(monthStart.getTime(), new Date(`${today}T00:00:00`).getTime()));
   const queryEnd = new Date(Math.max(monthEnd.getTime(), weekEnd.getTime()));
   const selectedDay = params.day || new Date().toISOString().slice(0, 10);
-  const [{ events, taskDeadlines }, { data: clients }, { data: profiles }] = await Promise.all([
+  const [{ events, taskDeadlines, interactions }, { data: clients }, { data: profiles }] = await Promise.all([
     getInternalCalendarEvents({ from: queryStart.toISOString(), to: queryEnd.toISOString() }),
     supabase.from("clients").select("id, name").is("deleted_at", null).order("name"),
     supabase.from("profiles").select("id, full_name, email").order("email")
@@ -89,7 +91,9 @@ export default async function InternalCalendarPage({
         clientName: client?.name,
         assignedTo: assigned?.full_name || assigned?.email || null,
         clientId: event.client_id,
+        clientIds: event.client_id ? [event.client_id] : [],
         responsibleId: event.assigned_to,
+        responsibleIds: event.assigned_to ? [event.assigned_to] : [],
         interactionId: event.interaction_id,
         taskId: event.task_id
       };
@@ -106,7 +110,37 @@ export default async function InternalCalendarPage({
         status: task.status,
         clientName: client?.name,
         clientId: task.client_id,
+        clientIds: task.client_id ? [task.client_id] : [],
         taskId: task.id
+      };
+    }),
+    ...interactions.map((interaction) => {
+      const linkedClients = (interaction.interaction_clients || []).flatMap((row) => {
+        const client = firstRelation(row.clients);
+        return client ? [client] : [];
+      });
+      const participants = (interaction.interaction_internal_participants || []).flatMap((row) => {
+        const profile = firstRelation(row.profiles);
+        return profile ? [profile] : [];
+      });
+      return {
+        id: interaction.id,
+        kind: "interaction" as const,
+        title: interaction.title,
+        date: buildInteractionDateTime(interaction.interaction_date, interaction.start_time),
+        href: `/interactions/${interaction.id}`,
+        type: interaction.type,
+        status: "registered",
+        clientName: linkedClients.map((client) => client.name).join(", ") || null,
+        clientId: linkedClients[0]?.id || null,
+        clientIds: linkedClients.map((client) => client.id),
+        assignedTo: participants.map((participant) => participant.full_name || participant.email).filter(Boolean).join(", ") || null,
+        responsibleId: interaction.created_by,
+        responsibleIds: [
+          interaction.created_by,
+          ...participants.map((participant) => participant.id)
+        ].filter(Boolean) as string[],
+        interactionId: interaction.id
       };
     })
   ];
@@ -150,11 +184,11 @@ export default async function InternalCalendarPage({
             <input name="q" defaultValue={params.q || ""} placeholder="Buscar eventos..." className="h-10 rounded-md border border-input bg-background px-3 text-sm md:col-span-2" />
             <select name="type" defaultValue={params.type || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Tipo</option>
-              {["call", "meeting", "internal_meeting", "reminder", "task_deadline", "follow_up", "report_due", "alert_follow_up", "other"].map((type) => <option key={type} value={type}>{type}</option>)}
+              {["call", "in_person_meeting", "important_email", "whatsapp", "lunch", "presentation", "stakeholder_meeting", "internal_meeting", "meeting", "reminder", "task_deadline", "follow_up", "report_due", "alert_follow_up", "other"].map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
             <select name="status" defaultValue={params.status || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Estado</option>
-              {["scheduled", "completed", "cancelled", "postponed", "pending", "in_progress", "in_review"].map((status) => <option key={status} value={status}>{status}</option>)}
+              {["scheduled", "registered", "completed", "cancelled", "postponed", "pending", "in_progress", "in_review"].map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
             <select name="client" defaultValue={params.client || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Cliente</option>
@@ -180,7 +214,7 @@ export default async function InternalCalendarPage({
           <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>{monthStart.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}</CardTitle>
-              <CardDescription>Vista mensual con eventos internos y vencimientos de tareas.</CardDescription>
+              <CardDescription>Vista mensual con eventos internos, reuniones y vencimientos de tareas.</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button asChild variant="outline" size="sm"><Link href={`/internal-calendar?month=${previousMonth}`}>Anterior</Link></Button>
@@ -236,6 +270,7 @@ function EventListCard({ title, items, empty, danger = false }: { title: string;
                 <p className="mt-1 text-xs text-muted-foreground">
                   {formatDateTime(item.date)} - {item.clientName || "Evento sin cliente"}
                   {item.kind === "task" ? " - Tarea con vencimiento" : ""}
+                  {item.kind === "interaction" ? " - Reunión registrada" : ""}
                   {item.kind === "event" && !item.interactionId ? " - Pendiente de interacción" : ""}
                 </p>
               </div>
@@ -270,6 +305,7 @@ function EventListCard({ title, items, empty, danger = false }: { title: string;
               ) : null}
               {item.clientId ? <Button asChild variant="ghost" size="sm"><Link href={`/clients/${item.clientId}`}>Ver cliente</Link></Button> : null}
               {item.taskId ? <Button asChild variant="ghost" size="sm"><Link href={`/tasks/${item.taskId}`}>Ver tarea</Link></Button> : null}
+              {item.kind === "interaction" ? <Button asChild variant="ghost" size="sm"><Link href={`/interactions/${item.id}`}>Ver reunión</Link></Button> : null}
             </div>
           </div>
         )) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
@@ -296,9 +332,9 @@ function filterItems(items: CalendarItem[], params: SearchParams, currentUserId:
     if (text && !`${item.title} ${item.clientName || ""}`.toLowerCase().includes(text)) return false;
     if (params.type && item.type !== params.type) return false;
     if (params.status && item.status !== params.status) return false;
-    if (params.client && item.clientId !== params.client) return false;
-    if (params.responsible && item.responsibleId !== params.responsible) return false;
-    if (params.mine === "1" && item.responsibleId !== currentUserId) return false;
+    if (params.client && !(item.clientIds || [item.clientId]).filter(Boolean).includes(params.client)) return false;
+    if (params.responsible && !(item.responsibleIds || [item.responsibleId]).filter(Boolean).includes(params.responsible)) return false;
+    if (params.mine === "1" && !(item.responsibleIds || [item.responsibleId]).filter(Boolean).includes(currentUserId)) return false;
     if (params.withoutClient === "1" && item.clientId) return false;
     if (params.withoutInteraction === "1" && (item.kind !== "event" || item.interactionId)) return false;
     if (params.range === "today" && dateKey(item.date) !== new Date().toISOString().slice(0, 10)) return false;
@@ -326,6 +362,10 @@ function isWithinNextDays(value: string, days: number) {
 
 function dateKey(value: string) {
   return new Date(value).toISOString().slice(0, 10);
+}
+
+function buildInteractionDateTime(date: string, time?: string | null) {
+  return `${date}T${time || "12:00:00"}`;
 }
 
 function formatDateTime(value: string) {

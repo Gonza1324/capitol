@@ -46,6 +46,20 @@ export type CalendarTaskDeadlineRow = {
   clients?: { id: string; name: string } | { id: string; name: string }[] | null;
 };
 
+export type CalendarInteractionRow = {
+  id: string;
+  title: string;
+  type: string;
+  interaction_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  location: string | null;
+  summary: string | null;
+  created_by: string | null;
+  interaction_clients?: Array<{ clients: { id: string; name: string } | { id: string; name: string }[] | null }>;
+  interaction_internal_participants?: Array<{ profiles: { id: string; full_name: string | null; email: string | null } | { id: string; full_name: string | null; email: string | null }[] | null }>;
+};
+
 export async function getInternalCalendarOptions() {
   const supabase = await createClient();
   const [{ data: clients }, { data: contacts }, { data: stakeholders }, { data: tasks }, { data: profiles }] = await Promise.all([
@@ -67,7 +81,7 @@ export async function getInternalCalendarOptions() {
 
 export async function getInternalCalendarEvents({ from, to }: { from: string; to: string }) {
   const supabase = await createClient();
-  const [{ data: events }, { data: tasks }] = await Promise.all([
+  const [{ data: events }, { data: tasks }, { data: interactions }] = await Promise.all([
     supabase
       .from("internal_calendar_events")
       .select("*, clients(id, name), contacts(id, full_name), stakeholders(id, full_name), tasks(id, title), interactions(id, title), profiles:assigned_to(id, full_name, email)")
@@ -82,11 +96,32 @@ export async function getInternalCalendarEvents({ from, to }: { from: string; to
       .lte("due_date", to.slice(0, 10))
       .not("status", "in", "(completed,cancelled)")
       .is("deleted_at", null)
-      .order("due_date", { ascending: true })
+      .order("due_date", { ascending: true }),
+    supabase
+      .from("interactions")
+      .select(`
+        id,
+        title,
+        type,
+        interaction_date,
+        start_time,
+        end_time,
+        location,
+        summary,
+        created_by,
+        interaction_clients(clients(id, name)),
+        interaction_internal_participants(profiles(id, full_name, email))
+      `)
+      .gte("interaction_date", from.slice(0, 10))
+      .lte("interaction_date", to.slice(0, 10))
+      .not("interaction_date", "is", null)
+      .is("deleted_at", null)
+      .order("interaction_date", { ascending: true })
   ]);
 
   return {
     events: (events || []) as unknown as InternalCalendarEventRow[],
-    taskDeadlines: (tasks || []) as unknown as CalendarTaskDeadlineRow[]
+    taskDeadlines: (tasks || []) as unknown as CalendarTaskDeadlineRow[],
+    interactions: (interactions || []) as unknown as CalendarInteractionRow[]
   };
 }
