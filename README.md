@@ -48,6 +48,9 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 
 ## Documentacion
 
+- Cierre V1: [docs/v1-release-notes.md](./docs/v1-release-notes.md)
+- Backlog V2: [docs/v2-backlog.md](./docs/v2-backlog.md)
+- Plan de adopcion interna: [docs/internal-adoption-plan.md](./docs/internal-adoption-plan.md)
 - Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
 - Guia para administradores: [docs/admin-guide.md](./docs/admin-guide.md)
 - Criterios UX/UI: [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md)
