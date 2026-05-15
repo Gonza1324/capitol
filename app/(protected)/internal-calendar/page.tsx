@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { ConfirmAction } from "@/components/feedback/confirm-action";
 import { InternalCalendarStatusBadge, InternalCalendarTypeBadge } from "@/components/internal-calendar/internal-calendar-badges";
 import { ToastMessage } from "@/components/feedback/toast-message";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { archiveInternalCalendarEvent, changeInternalCalendarEventStatus, createInteractionFromInternalCalendarEvent } from "@/lib/actions/internal-calendar";
 import { getInternalCalendarEvents } from "@/lib/data/internal-calendar";
 import { firstRelation } from "@/lib/data/interactions";
@@ -70,11 +70,10 @@ export default async function InternalCalendarPage({
   const queryStart = new Date(Math.min(monthStart.getTime(), new Date(`${today}T00:00:00`).getTime()));
   const queryEnd = new Date(Math.max(monthEnd.getTime(), weekEnd.getTime()));
   const selectedDay = params.day || new Date().toISOString().slice(0, 10);
-  const [{ events, taskDeadlines, interactions }, { data: clients }, { data: profiles }] = await Promise.all([
-    getInternalCalendarEvents({ from: queryStart.toISOString(), to: queryEnd.toISOString() }),
-    supabase.from("clients").select("id, name").is("deleted_at", null).order("name"),
-    supabase.from("profiles").select("id, full_name, email").order("email")
-  ]);
+  const { events, taskDeadlines, interactions } = await getInternalCalendarEvents({
+    from: queryStart.toISOString(),
+    to: queryEnd.toISOString()
+  });
 
   const allItems: CalendarItem[] = [
     ...events.map((event) => {
@@ -176,49 +175,19 @@ export default async function InternalCalendarPage({
         <Button asChild variant={params.type === "task_deadline" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?type=task_deadline&range=week">Tareas próximas a vencer</Link></Button>
       </div>
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <form className="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
-            <input type="hidden" name="month" value={monthStart.toISOString().slice(0, 7)} />
-            <input type="hidden" name="day" value={selectedDay} />
-            <input name="q" defaultValue={params.q || ""} placeholder="Buscar eventos..." className="h-10 rounded-md border border-input bg-background px-3 text-sm md:col-span-2" />
-            <select name="type" defaultValue={params.type || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-              <option value="">Tipo</option>
-              {["call", "in_person_meeting", "important_email", "whatsapp", "lunch", "presentation", "stakeholder_meeting", "internal_meeting", "meeting", "reminder", "task_deadline", "follow_up", "report_due", "alert_follow_up", "other"].map((type) => <option key={type} value={type}>{type}</option>)}
-            </select>
-            <select name="status" defaultValue={params.status || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-              <option value="">Estado</option>
-              {["scheduled", "registered", "completed", "cancelled", "postponed", "pending", "in_progress", "in_review"].map((status) => <option key={status} value={status}>{status}</option>)}
-            </select>
-            <select name="client" defaultValue={params.client || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-              <option value="">Cliente</option>
-              {((clients || []) as Array<{ id: string; name: string }>).map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
-            </select>
-            <select name="responsible" defaultValue={params.responsible || ""} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
-              <option value="">Responsable</option>
-              {((profiles || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((item) => <option key={item.id} value={item.id}>{item.full_name || item.email}</option>)}
-            </select>
-            <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="mine" value="1" defaultChecked={params.mine === "1"} /> Mis eventos</label>
-            <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="withoutClient" value="1" defaultChecked={params.withoutClient === "1"} /> Sin cliente</label>
-            <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="withoutInteraction" value="1" defaultChecked={params.withoutInteraction === "1"} /> Sin interacción</label>
-            <div className="flex gap-2 md:col-span-4 xl:col-span-8">
-              <Button type="submit" variant="secondary">Filtrar</Button>
-              <Button asChild type="button" variant="outline"><Link href="/internal-calendar">Limpiar filtros</Link></Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
       <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
         <Card>
           <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle>{monthStart.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}</CardTitle>
-              <CardDescription>Vista mensual con eventos internos, reuniones y vencimientos de tareas.</CardDescription>
+              <CardTitle>{capitalize(monthStart.toLocaleDateString("es-AR", { month: "long", year: "numeric" }))}</CardTitle>
             </div>
             <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm"><Link href={`/internal-calendar?month=${previousMonth}`}>Anterior</Link></Button>
-              <Button asChild variant="outline" size="sm"><Link href={`/internal-calendar?month=${nextMonth}`}>Siguiente</Link></Button>
+              <Button asChild variant="outline" size="icon" aria-label="Mes anterior">
+                <Link href={`/internal-calendar?month=${previousMonth}`}><ChevronLeft className="h-4 w-4" /></Link>
+              </Button>
+              <Button asChild variant="outline" size="icon" aria-label="Mes siguiente">
+                <Link href={`/internal-calendar?month=${nextMonth}`}><ChevronRight className="h-4 w-4" /></Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -366,6 +335,10 @@ function dateKey(value: string) {
 
 function buildInteractionDateTime(date: string, time?: string | null) {
   return `${date}T${time || "12:00:00"}`;
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function formatDateTime(value: string) {
