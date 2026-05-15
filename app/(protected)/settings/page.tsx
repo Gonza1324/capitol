@@ -3,11 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { ToastMessage } from "@/components/feedback/toast-message";
+import { GoogleCalendarSettings } from "@/components/calendar/google-calendar-settings";
 import { CatalogForm } from "@/components/settings/catalog-form";
 import { UserManagement } from "@/components/settings/user-management";
 import { createCatalogItem } from "@/lib/actions/clients";
+import { getCurrentCalendarConnection } from "@/lib/data/google-calendar";
+import { isGoogleCalendarEnabled } from "@/lib/google/calendar";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/supabase/types";
+
+const internalRoles = ["admin", "partner_director", "analyst", "assistant"];
 
 export default async function SettingsPage({
   searchParams
@@ -19,18 +24,23 @@ export default async function SettingsPage({
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const [{ data: industries }, { data: interests }, { data: profiles }, { data: currentProfile }] = await Promise.all([
+  const [{ data: industries }, { data: interests }, { data: profiles }, { data: currentProfile }, calendarConnection] = await Promise.all([
     supabase.from("industries").select("id, name, is_active").order("name"),
     supabase.from("interests").select("id, name, is_active").order("name"),
     supabase.from("profiles").select("id, full_name, email, role").order("email"),
-    user ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null })
+    user ? supabase.from("profiles").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+    getCurrentCalendarConnection()
   ]);
+  const canUseGoogleCalendar = Boolean(currentProfile?.role && internalRoles.includes(currentProfile.role));
 
   return (
     <>
       <ToastMessage code={params.toast} />
       <PageHeader title="Configuracion" description="Administracion minima para rubros, issues y usuarios internos." />
       <div className="grid gap-6 lg:grid-cols-3">
+        {canUseGoogleCalendar ? (
+          <GoogleCalendarSettings connection={calendarConnection} enabled={isGoogleCalendarEnabled()} />
+        ) : null}
         <CatalogCard
           title="Rubros"
           description="Categorias configurables para clientes y alertas."

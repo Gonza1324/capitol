@@ -24,12 +24,14 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 - Dashboard.
 - Clientes y contactos.
 - Tareas.
+- Calendario interno.
 - Interacciones.
 - Reportes enviados.
 - Alertas enviadas.
 - Stakeholders.
 - Documentos y links externos.
 - Busqueda global y busquedas guardadas.
+- Google Calendar externo preparado, pausado por feature flag.
 - Configuracion.
 - Administracion de usuarios.
 - Historial completo por cliente.
@@ -39,7 +41,6 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 
 - Honorarios.
 - Portal de clientes.
-- Google Calendar.
 - Gmail.
 - Google Drive API.
 - WhatsApp.
@@ -51,6 +52,8 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 - Cierre V1: [docs/v1-release-notes.md](./docs/v1-release-notes.md)
 - Backlog V2: [docs/v2-backlog.md](./docs/v2-backlog.md)
 - Plan de adopcion interna: [docs/internal-adoption-plan.md](./docs/internal-adoption-plan.md)
+- Calendario interno: [docs/internal-calendar.md](./docs/internal-calendar.md)
+- Integracion Google Calendar: [docs/google-calendar-integration.md](./docs/google-calendar-integration.md)
 - Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
 - Guia para administradores: [docs/admin-guide.md](./docs/admin-guide.md)
 - Criterios UX/UI: [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md)
@@ -66,6 +69,10 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=
+NEXT_PUBLIC_GOOGLE_CALENDAR_ENABLED=false
 ```
 
 3. Instalar dependencias:

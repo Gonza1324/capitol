@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { InteractionTypeChart } from "@/components/interactions/interaction-type-chart";
+import { InternalCalendarStatusBadge, InternalCalendarTypeBadge } from "@/components/internal-calendar/internal-calendar-badges";
 import { TaskStatusChart } from "@/components/tasks/task-status-chart";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/data/tasks";
@@ -29,6 +30,17 @@ type ClientAttention = {
   id: string;
   name: string;
   reasons: string[];
+};
+
+type DashboardInternalEvent = {
+  id: string;
+  summary: string | null;
+  title: string;
+  event_type: string;
+  status: string;
+  start_at: string | null;
+  end_at: string | null;
+  clients: { id: string; name: string } | Array<{ id: string; name: string }> | null;
 };
 
 export default async function DashboardPage() {
@@ -66,7 +78,10 @@ export default async function DashboardPage() {
     { data: activeClientRows },
     { data: recentClientInteractionRows },
     { data: criticalAlertClientRows },
-    { data: reviewReportClientRows }
+    { data: reviewReportClientRows },
+    { data: upcomingInternalEventRows },
+    { data: todayInternalEventRows },
+    { data: overdueInternalEventRows }
   ] = await Promise.all([
     supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active").is("deleted_at", null),
     supabase.from("tasks").select("id", { count: "exact", head: true }).in("status", ["pending", "in_progress", "in_review"]).is("deleted_at", null),
@@ -89,7 +104,10 @@ export default async function DashboardPage() {
     supabase.from("clients").select("id, name").eq("status", "active").is("deleted_at", null).limit(100),
     supabase.from("interaction_clients").select("client_id, interactions!inner(interaction_date)").gte("interactions.interaction_date", staleCutoff).is("interactions.deleted_at", null).limit(500),
     supabase.from("alert_clients").select("clients(id, name), alerts!inner(title, urgency, sent_at)").eq("alerts.urgency", "critical").gte("alerts.sent_at", monthStart).is("alerts.deleted_at", null).limit(100),
-    supabase.from("report_clients").select("clients(id, name), reports!inner(status, title)").in("reports.status", ["draft", "in_review"]).is("reports.deleted_at", null).limit(100)
+    supabase.from("report_clients").select("clients(id, name), reports!inner(status, title)").in("reports.status", ["draft", "in_review"]).is("reports.deleted_at", null).limit(100),
+    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").gte("start_at", now.toISOString()).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: true }).limit(6),
+    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").gte("start_at", `${today}T00:00:00`).lte("start_at", `${today}T23:59:59`).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: true }).limit(6),
+    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").lt("start_at", now.toISOString()).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: false }).limit(6)
   ]);
 
   const myTasks = ((myTaskRows || []) as Array<{ tasks: TaskWithClient | TaskWithClient[] | null }>).flatMap((row) => {
@@ -99,6 +117,9 @@ export default async function DashboardPage() {
   const overdueList = (overdueTaskRows || []) as unknown as TaskWithClient[];
   const upcomingTasks = (upcomingTaskRows || []) as unknown as TaskWithClient[];
   const urgentTasks = (urgentTaskRows || []) as unknown as TaskWithClient[];
+  const upcomingInternalEvents = (upcomingInternalEventRows || []) as unknown as DashboardInternalEvent[];
+  const todayInternalEvents = (todayInternalEventRows || []) as unknown as DashboardInternalEvent[];
+  const overdueInternalEvents = (overdueInternalEventRows || []) as unknown as DashboardInternalEvent[];
   const activity = (recentActivityRows || []) as unknown as ActivityRow[];
   const attention = buildAttentionClients({
     overdueClientRows: overdueClientRows || [],
@@ -173,6 +194,23 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
+      <section className="mt-6">
+        <Card>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle>Calendario interno</CardTitle>
+              <CardDescription>Eventos de hoy, proximos eventos y pendientes vencidos.</CardDescription>
+            </div>
+            <Link href="/internal-calendar" className="text-sm font-medium text-primary hover:underline">Ver calendario</Link>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <InternalEventMiniList title="Hoy" events={todayInternalEvents} empty="Sin eventos para hoy." />
+            <InternalEventMiniList title="Proximos" events={upcomingInternalEvents} empty="Sin proximos eventos." />
+            <InternalEventMiniList title="Vencidos" events={overdueInternalEvents} empty="Sin eventos vencidos." danger />
+          </CardContent>
+        </Card>
+      </section>
+
       <section className="mt-6 grid gap-4 xl:grid-cols-[1fr_24rem]">
         <Card>
           <CardHeader><CardTitle>Actividad reciente</CardTitle></CardHeader>
@@ -205,6 +243,27 @@ export default async function DashboardPage() {
         <Card><CardHeader><CardTitle>Reportes por tipo</CardTitle></CardHeader><CardContent><InteractionTypeChart data={reportChartData} /></CardContent></Card>
       </section>
     </>
+  );
+}
+
+function InternalEventMiniList({ title, events, empty, danger = false }: { title: string; events: DashboardInternalEvent[]; empty: string; danger?: boolean }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {events.length ? events.map((event) => {
+        const client = firstRelation(event.clients);
+        return (
+          <Link key={event.id} href={`/internal-calendar/${event.id}`} className={`block rounded-md border p-3 text-sm hover:bg-accent ${danger ? "border-destructive/40" : ""}`}>
+            <p className="font-medium">{event.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{formatDate(event.start_at)} {client ? `- ${client.name}` : ""}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <InternalCalendarTypeBadge type={event.event_type} />
+              <InternalCalendarStatusBadge status={event.status} />
+            </div>
+          </Link>
+        );
+      }) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
+    </div>
   );
 }
 

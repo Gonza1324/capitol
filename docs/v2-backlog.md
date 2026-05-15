@@ -4,14 +4,25 @@ Este backlog ordena posibles mejoras posteriores al cierre de V1. No implica com
 
 ## Prioridad alta
 
+### Calendario interno
+
+- Estado: implementado como paso intermedio antes de activar Google Calendar externo.
+- Descripcion: agenda interna para llamadas, reuniones, recordatorios, vencimientos de tareas y eventos asociados a clientes.
+- Valor para Capitol: permite ordenar la agenda operativa sin depender de OAuth externo ni sincronizacion con Google.
+- Complejidad estimada: media.
+- Dependencias: uso real del equipo y ajustes menores de calendario.
+- Riesgos: carga duplicada si luego se activa Google sin una estrategia de sincronizacion clara.
+- Recomendacion: usar el calendario interno como fuente principal de Capitol Hub y conectar Google Calendar contra este modelo en una fase futura.
+
 ### Google Calendar
 
+- Estado: pausado por feature flag; primera base tecnica preparada.
 - Descripcion: integrar eventos de calendario para crear o vincular interacciones, fechas y participantes.
 - Valor para Capitol: reduce doble carga y mejora trazabilidad de reuniones.
 - Complejidad estimada: alta.
-- Dependencias: OAuth Google, permisos por usuario, modelo de sincronizacion, politica de privacidad.
+- Dependencias: OAuth Google, permisos por usuario, modelo de sincronizacion, calendario interno, politica de privacidad.
 - Riesgos: permisos excesivos, duplicados, inconsistencias entre calendario y Hub.
-- Recomendacion: empezar con vinculacion/importacion manual asistida antes de sincronizacion bidireccional.
+- Recomendacion: sincronizar Google contra `internal_calendar_events` en vez de mantener dos calendarios paralelos.
 
 ### Gmail
 

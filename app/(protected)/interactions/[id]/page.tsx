@@ -15,6 +15,7 @@ import { getTaskFormOptions } from "@/lib/data/tasks";
 import { createClient } from "@/lib/supabase/server";
 import { formatInteractionDate, InteractionTypeBadge } from "@/components/interactions/interaction-badges";
 import { EntityDocuments } from "@/components/documents/entity-documents";
+import { formatCalendarEventDate } from "@/components/calendar/calendar-event-card";
 
 type InteractionDetail = {
   id: string;
@@ -46,6 +47,16 @@ type ExternalRel = {
   stakeholders: { id: string; full_name: string; organization: string | null } | Array<{ id: string; full_name: string; organization: string | null }> | null;
 };
 type DerivedTask = { id: string; title: string; status: string; priority: string; due_date: string | null };
+type LinkedCalendarEvent = {
+  id: string;
+  summary: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  html_link: string | null;
+  meet_url: string | null;
+};
 
 export default async function InteractionDetailPage({
   params,
@@ -62,6 +73,7 @@ export default async function InteractionDetailPage({
     { data: internal },
     { data: external },
     { data: tasks },
+    { data: calendarEvents },
     { data: activity },
     { data: profiles }
   ] = await Promise.all([
@@ -70,6 +82,7 @@ export default async function InteractionDetailPage({
     supabase.from("interaction_internal_participants").select("profiles(id, full_name, email)").eq("interaction_id", id),
     supabase.from("interaction_external_participants").select("name, email, contacts(full_name, email), stakeholders(id, full_name, organization)").eq("interaction_id", id),
     supabase.from("tasks").select("id, title, status, priority, due_date").eq("origin_type", "interaction").eq("origin_id", id).is("deleted_at", null).order("created_at", { ascending: false }),
+    supabase.from("google_calendar_events").select("id, summary, start_at, end_at, start_date, end_date, html_link, meet_url").eq("interaction_id", id).is("deleted_at", null).limit(1),
     supabase.from("activity_log").select("action, created_at").eq("entity_type", "interaction").eq("entity_id", id).order("created_at", { ascending: false }).limit(10),
     supabase.from("profiles").select("id, full_name, email")
   ]);
@@ -95,6 +108,7 @@ export default async function InteractionDetailPage({
   });
   const profileLabels = new Map(((profiles || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => [profile.id, profile.full_name || profile.email || "Usuario"]));
   const firstClientId = linkedClients[0]?.id || "";
+  const linkedCalendarEvent = ((calendarEvents || []) as LinkedCalendarEvent[])[0] || null;
 
   return (
     <>
@@ -124,8 +138,8 @@ export default async function InteractionDetailPage({
               <Info label="Participantes internos"><BadgeGroup values={internalParticipants.map((item) => item.label)} /></Info>
               <Info label="Participantes externos"><LinkBadges values={externalParticipants} /></Info>
               <Info label="Creada por">{detail.created_by ? profileLabels.get(detail.created_by) || "-" : "-"}</Info>
-              <Info label="Link de reunion">{detail.google_meet_url ? <a className="text-primary underline" href={detail.google_meet_url} target="_blank">Abrir link</a> : "-"}</Info>
-              <Info label="ID de evento externo">{detail.google_calendar_event_id || "-"}</Info>
+              <Info label="Link de reunion">{detail.google_meet_url ? <a className="text-primary underline" href={detail.google_meet_url} target="_blank" rel="noreferrer">Abrir link</a> : "-"}</Info>
+              <Info label="Evento Calendar">{detail.google_calendar_event_id || "-"}</Info>
               <Info label="Descripcion" wide>{detail.description || "-"}</Info>
               <Info label="Resumen" wide>{detail.summary || "-"}</Info>
               <Info label="Notas" wide>{detail.notes || "-"}</Info>
@@ -134,6 +148,29 @@ export default async function InteractionDetailPage({
               <Info label="Proximos pasos" wide>{detail.next_steps || "-"}</Info>
             </CardContent>
           </Card>
+
+          {linkedCalendarEvent ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Evento de Google Calendar</CardTitle>
+                <CardDescription>Evento sincronizado que originó o quedó asociado a esta interacción.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div>
+                  <p className="font-medium">{linkedCalendarEvent.summary || "Evento sin titulo"}</p>
+                  <p className="text-muted-foreground">{formatCalendarEventDate(linkedCalendarEvent)}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {linkedCalendarEvent.html_link ? (
+                    <Button asChild variant="outline" size="sm"><a href={linkedCalendarEvent.html_link} target="_blank" rel="noreferrer">Abrir Calendar</a></Button>
+                  ) : null}
+                  {linkedCalendarEvent.meet_url ? (
+                    <Button asChild variant="outline" size="sm"><a href={linkedCalendarEvent.meet_url} target="_blank" rel="noreferrer">Abrir Meet</a></Button>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>

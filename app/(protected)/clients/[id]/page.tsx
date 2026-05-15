@@ -19,6 +19,7 @@ import { InfluenceBadge, SensitivityBadge, StakeholderTypeBadge, StanceBadge } f
 import { EntityDocuments } from "@/components/documents/entity-documents";
 import { ClientHistoryTimeline } from "@/components/clients/client-history-timeline";
 import { PrintReportButton } from "@/components/clients/print-report-button";
+import { formatCalendarEventDate } from "@/components/calendar/calendar-event-card";
 import { getClientHistory } from "@/lib/data/client-history";
 
 type ClientDetail = {
@@ -130,6 +131,21 @@ type ClientStakeholderRow = {
   }> | null;
 };
 
+type ClientInternalCalendarEventRow = {
+  id: string;
+  title: string;
+  event_type: string;
+  status: string;
+  location: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  meeting_url: string | null;
+  task_id: string | null;
+  interaction_id: string | null;
+  interactions?: { id: string; title: string } | { id: string; title: string }[] | null;
+  tasks?: { id: string; title: string } | { id: string; title: string }[] | null;
+};
+
 export default async function ClientDetailPage({
   params,
   searchParams
@@ -143,7 +159,7 @@ export default async function ClientDetailPage({
   ]);
   const supabase = await createClient();
 
-  const [{ data: client }, { data: contacts }, { data: clientTasks }, { data: clientInteractions }, { data: clientReports }, { data: clientAlerts }, { data: clientStakeholders }, { data: profilesForLabels }] = await Promise.all([
+  const [{ data: client }, { data: contacts }, { data: clientTasks }, { data: clientInteractions }, { data: clientReports }, { data: clientAlerts }, { data: clientStakeholders }, { data: clientInternalCalendarEvents }, { data: profilesForLabels }] = await Promise.all([
     supabase
       .from("clients")
       .select(`
@@ -201,6 +217,13 @@ export default async function ClientDetailPage({
       .select("relationship_description, stakeholders(id, full_name, type, organization, title, jurisdiction, influence_level, stance, sensitivity_level)")
       .eq("client_id", id)
       .is("stakeholders.deleted_at", null),
+    supabase
+      .from("internal_calendar_events")
+      .select("id, title, event_type, status, location, start_at, end_at, meeting_url, task_id, interaction_id, interactions(id, title), tasks(id, title)")
+      .eq("client_id", id)
+      .is("deleted_at", null)
+      .order("start_at", { ascending: false, nullsFirst: false })
+      .limit(8),
     supabase.from("profiles").select("id, full_name, email")
   ]);
 
@@ -260,7 +283,7 @@ export default async function ClientDetailPage({
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {["Resumen", "Historial", "Contactos", "Tareas", "Calls", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
+        {["Resumen", "Historial", "Contactos", "Tareas", "Calendario", "Calls", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
           <Badge key={tab} variant={tab === "Resumen" || tab === "Historial" ? "secondary" : "outline"}>{tab}</Badge>
         ))}
       </div>
@@ -360,6 +383,7 @@ export default async function ClientDetailPage({
 
           <ClientTasksSection clientId={detail.id} tasks={taskRows} />
           <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
+          <ClientInternalCalendarEventsSection clientId={detail.id} events={(clientInternalCalendarEvents || []) as unknown as ClientInternalCalendarEventRow[]} />
           <ClientReportsSection clientId={detail.id} reports={(clientReports || []) as unknown as ClientReportRow[]} profileLabels={profileLabels} />
           <ClientAlertsSection clientId={detail.id} alerts={(clientAlerts || []) as unknown as ClientAlertRow[]} profileLabels={profileLabels} />
           <ClientStakeholdersSection clientId={detail.id} stakeholders={(clientStakeholders || []) as unknown as ClientStakeholderRow[]} />
@@ -587,6 +611,53 @@ function ClientInteractionsSection({ clientId, interactions }: { clientId: strin
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ClientInternalCalendarEventsSection({ clientId, events }: { clientId: string; events: ClientInternalCalendarEventRow[] }) {
+  const upcoming = events.filter((event) => new Date(event.start_at || "").getTime() >= Date.now()).slice(0, 6);
+  const recent = events.filter((event) => new Date(event.start_at || "").getTime() < Date.now()).slice(0, 6);
+  const pendingInteraction = events.filter((event) => !event.interaction_id && !["completed", "cancelled"].includes(event.status)).slice(0, 6);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <CardTitle>Calendario</CardTitle>
+          <CardDescription>Proximas reuniones, eventos recientes y pendientes de interaccion.</CardDescription>
+        </div>
+        <Button asChild><Link href={`/internal-calendar/new?clientId=${clientId}`}>Nuevo evento</Link></Button>
+      </CardHeader>
+      <CardContent className="grid gap-4 lg:grid-cols-3">
+        <ClientEventGroup title="Proximos" events={upcoming} empty="Sin proximos eventos." />
+        <ClientEventGroup title="Recientes" events={recent} empty="Sin eventos recientes." />
+        <ClientEventGroup title="Pendientes de interaccion" events={pendingInteraction} empty="Sin eventos pendientes." />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClientEventGroup({ title, events, empty }: { title: string; events: ClientInternalCalendarEventRow[]; empty: string }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {events.length ? events.map((event) => {
+        const interaction = firstRelation(event.interactions);
+        const task = firstRelation(event.tasks);
+        return (
+          <Link key={event.id} href={`/internal-calendar/${event.id}`} className="block rounded-md border p-3 text-sm hover:bg-accent">
+            <p className="font-medium">{event.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{formatCalendarEventDate({ start_at: event.start_at, end_at: event.end_at, start_date: null, end_date: null })}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <Badge variant="muted">{event.event_type}</Badge>
+              <Badge variant={event.status === "completed" ? "success" : event.status === "cancelled" ? "danger" : "secondary"}>{event.status}</Badge>
+              {interaction ? <Badge variant="success">con interaccion</Badge> : null}
+              {task ? <Badge variant="warning">tarea</Badge> : null}
+            </div>
+          </Link>
+        );
+      }) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
+    </div>
   );
 }
 

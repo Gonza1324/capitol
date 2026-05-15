@@ -79,6 +79,83 @@ export type TaskRow = {
   deleted_at: string | null;
 };
 
+export type GoogleCalendarConnectionRow = {
+  id: string;
+  user_id: string;
+  google_account_email: string | null;
+  access_token: string;
+  refresh_token: string | null;
+  token_type: string | null;
+  scope: string | null;
+  expires_at: string | null;
+  connected_at: string;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type GoogleCalendarEventRow = {
+  id: string;
+  user_id: string;
+  google_event_id: string;
+  calendar_id: string;
+  summary: string | null;
+  description: string | null;
+  location: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  html_link: string | null;
+  hangout_link: string | null;
+  meet_url: string | null;
+  status: string | null;
+  organizer_email: string | null;
+  attendees: Json;
+  raw: Json;
+  client_id: string | null;
+  interaction_id: string | null;
+  synced_at: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type InternalCalendarEventRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  event_type: string;
+  status: string;
+  start_at: string;
+  end_at: string | null;
+  all_day: boolean;
+  timezone: string;
+  location: string | null;
+  meeting_url: string | null;
+  client_id: string | null;
+  contact_id: string | null;
+  stakeholder_id: string | null;
+  task_id: string | null;
+  interaction_id: string | null;
+  created_by: string | null;
+  assigned_to: string | null;
+  visibility: string;
+  source: string;
+  external_provider: string | null;
+  external_event_id: string | null;
+  external_calendar_id: string | null;
+  sync_status: string;
+  last_synced_at: string | null;
+  recurrence_rule: string | null;
+  is_recurring: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -122,6 +199,24 @@ export type Database = {
         Row: { id: string; title: string; interaction_date: string | null };
         Insert: { id?: string; title: string; interaction_date?: string | null };
         Update: { id?: string; title?: string; interaction_date?: string | null };
+        Relationships: [];
+      };
+      google_calendar_connections: {
+        Row: GoogleCalendarConnectionRow;
+        Insert: Partial<Omit<GoogleCalendarConnectionRow, "id" | "created_at" | "updated_at" | "connected_at">> & { id?: string; user_id: string; access_token: string; created_at?: string; updated_at?: string; connected_at?: string };
+        Update: Partial<GoogleCalendarConnectionRow>;
+        Relationships: [];
+      };
+      google_calendar_events: {
+        Row: GoogleCalendarEventRow;
+        Insert: Partial<Omit<GoogleCalendarEventRow, "id" | "created_at" | "updated_at" | "synced_at" | "calendar_id" | "attendees" | "raw">> & { id?: string; user_id: string; google_event_id: string; calendar_id?: string; attendees?: Json; raw?: Json; created_at?: string; updated_at?: string; synced_at?: string };
+        Update: Partial<GoogleCalendarEventRow>;
+        Relationships: [];
+      };
+      internal_calendar_events: {
+        Row: InternalCalendarEventRow;
+        Insert: Partial<Omit<InternalCalendarEventRow, "id" | "created_at" | "updated_at" | "timezone" | "visibility" | "source" | "sync_status">> & { id?: string; title: string; start_at: string; timezone?: string; visibility?: string; source?: string; sync_status?: string; created_at?: string; updated_at?: string };
+        Update: Partial<InternalCalendarEventRow>;
         Relationships: [];
       };
     };
