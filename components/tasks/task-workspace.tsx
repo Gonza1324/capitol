@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye, KanbanSquare, List, Pencil } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Check, Eye, KanbanSquare, List, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -130,7 +130,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       {
         header: "Titulo",
         cell: ({ row }) => (
-          <div className="min-w-72 max-w-xl">
+          <div className="min-w-[32rem] max-w-3xl">
             <Link href={`/tasks/${row.original.id}`} className="font-medium hover:underline">{row.original.title}</Link>
             <p className="mt-1 text-xs text-muted-foreground">{row.original.client_name || "Sin cliente"}</p>
             {isOverdue(row.original.due_date, row.original.status) ? <p className="mt-1 text-xs text-destructive">Vencida</p> : null}
@@ -149,23 +149,22 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         header: () => <SortableHeader label="Fecha limite" active={sort?.key === "due_date"} direction={sort?.direction} onClick={() => toggleSort("due_date")} />,
         cell: ({ row }) => row.original.due_date || "-"
       },
-      { header: "Actualizada", cell: ({ row }) => formatDate(row.original.updated_at) },
       {
         header: "Acciones",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm"><Link href={`/tasks/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
-            <Button asChild variant="outline" size="sm"><Link href={`/tasks/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
+            <Button asChild variant="outline" size="icon" title="Ver detalle" aria-label="Ver detalle"><Link href={`/tasks/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
+            <Button asChild variant="outline" size="icon" title="Editar" aria-label="Editar"><Link href={`/tasks/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
             {row.original.status !== "completed" ? (
-              <Button size="sm" variant="outline" disabled={isPending} onClick={() => startTransition(async () => { await changeTaskStatus(row.original.id, "completed", row.original.client_id, "/tasks?toast=task_completed"); })}>
-                Completar
+              <Button size="icon" variant="outline" title="Completar" aria-label="Completar" disabled={isPending} onClick={() => startTransition(async () => { await changeTaskStatus(row.original.id, "completed", row.original.client_id, "/tasks?toast=task_completed"); })}>
+                <Check className="h-4 w-4" />
               </Button>
             ) : null}
-            <Button size="sm" variant="ghost" disabled={isPending} onClick={() => {
+            <Button size="icon" variant="ghost" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => {
               if (!window.confirm(`Archivar ${row.original.title}?`)) return;
               startTransition(async () => { await archiveTaskRecord(row.original.id, row.original.client_id, "/tasks?toast=task_archived"); });
             }}>
-              Archivar
+              <Archive className="h-4 w-4" />
             </Button>
           </div>
         )
@@ -341,8 +340,4 @@ function getEmptyMessage(total: number, filtered: number, special: Filters["spec
   if (special === "mine" && !filtered) return "No hay tareas asignadas a mi";
   if (special === "overdue" && !filtered) return "No hay tareas vencidas";
   return "No hay resultados con los filtros actuales";
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
 }
