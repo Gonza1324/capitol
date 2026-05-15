@@ -1,14 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { createClient } from "@/lib/supabase/server";
 
-function firstNameFromProfile(fullName?: string | null, email?: string | null) {
+function userLabelFromProfile(fullName?: string | null, email?: string | null) {
   const fallback = email?.split("@")[0] || "Usuario";
-  const label = fullName?.trim() || fallback;
-  return label.split(/\s+/)[0] || "Usuario";
+  return fullName?.trim() || fallback;
 }
 
 export async function Sidebar() {
@@ -29,7 +28,7 @@ export async function Sidebar() {
       .eq("user_id", user.id)
       .is("read_at", null)
   ]);
-  const displayName = firstNameFromProfile(profile?.full_name, profile?.email || user.email);
+  const displayName = userLabelFromProfile(profile?.full_name, profile?.email || user.email);
 
   return (
     <aside className="flex w-full flex-col border-r border-white/10 bg-[#111111] md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:overflow-hidden md:w-60">
@@ -49,9 +48,10 @@ export async function Sidebar() {
         </div>
         <Link
           href="/settings"
-          className="rounded-md px-2 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-capitol-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
+          aria-label="Configuracion"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-capitol-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]"
         >
-          Configuracion
+          <Settings className="h-4 w-4" />
         </Link>
         <Link
           href="/notifications"
