@@ -364,7 +364,6 @@ export default async function ClientDetailPage({
           <ClientAlertsSection clientId={detail.id} alerts={(clientAlerts || []) as unknown as ClientAlertRow[]} profileLabels={profileLabels} />
           <ClientStakeholdersSection clientId={detail.id} stakeholders={(clientStakeholders || []) as unknown as ClientStakeholderRow[]} />
           <EntityDocuments entityType="client" entityId={detail.id} />
-          <PlaceholderSections />
         </div>
 
       </div>
@@ -689,21 +688,6 @@ function ClientStakeholdersSection({ clientId, stakeholders }: { clientId: strin
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function PlaceholderSections() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {["Actividad"].map((title) => (
-        <Card key={title}>
-          <CardHeader>
-            <CardTitle className="text-base">{title}</CardTitle>
-            <CardDescription>Se implementara en una proxima fase.</CardDescription>
-          </CardHeader>
-        </Card>
-      ))}
-    </div>
   );
 }
 

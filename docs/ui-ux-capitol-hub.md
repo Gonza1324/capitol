@@ -155,7 +155,7 @@ La app debe priorizar productividad: encontrar, actualizar y revisar informacion
 
 - Claras, de baja friccion.
 - Priorizar Resumen, Historial y entidades relacionadas.
-- Evitar tabs vacias salvo placeholders temporales muy claros.
+- Evitar tabs vacias o secciones sin uso operativo.
 
 ### Buttons
 

@@ -22,7 +22,7 @@ const items = [
   { href: "/clients", label: "Clientes", icon: BriefcaseBusiness },
   { href: "/contacts", label: "Contactos", icon: Contact },
   { href: "/tasks", label: "Tareas", icon: SquareCheckBig },
-  { href: "/interactions", label: "Calls", icon: CalendarClock },
+  { href: "/interactions", label: "Interacciones", icon: CalendarClock },
   { href: "/reports", label: "Reportes", icon: FileText },
   { href: "/alerts", label: "Alertas", icon: Bell },
   { href: "/stakeholders", label: "Stakeholders", icon: Users },

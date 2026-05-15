@@ -2,72 +2,93 @@
 
 Capitol Hub es la plataforma interna de Capitol para centralizar clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders, documentos, busqueda global e historial por cliente.
 
-## Setup
+## Stack
 
-1. Copiar `.env.example` a `.env.local`.
-2. Completar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Completar `SUPABASE_SERVICE_ROLE_KEY` solo en entornos server-side para poder crear y editar usuarios desde Configuracion.
-4. Ejecutar la migracion en `supabase/migrations/001_initial_phase.sql`.
-5. Correr `npm run dev`.
+- Next.js App Router
+- TypeScript
+- Supabase Auth, Postgres, Storage y RLS
+- Tailwind CSS
+- shadcn/ui
+- React Hook Form
+- Zod
+- TanStack Table
+- Recharts
+- Vercel
 
-Para staging en Vercel + Supabase remoto, ver [DEPLOYMENT_STAGING.md](./DEPLOYMENT_STAGING.md).
+## Estado actual
 
-## Deploy automatico con Vercel
+La app esta desplegada y lista para uso interno inicial. Cuenta con deploy automatico GitHub -> Vercel y backend Supabase.
 
-Para conectar GitHub con Vercel y habilitar deploys automaticos desde `main` y Preview Deployments desde branches/PRs, ver [docs/vercel-github-deploy.md](./docs/vercel-github-deploy.md).
+## Modulos implementados
 
-## UX/UI
-
-Para criterios visuales alineados con la identidad publica de Capitol, ver [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md).
-
-## Uso interno y go-live
-
-- Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
-- Checklist de carga inicial: [docs/initial-data-entry-checklist.md](./docs/initial-data-entry-checklist.md)
-- Checklist de go-live: [docs/go-live-checklist.md](./docs/go-live-checklist.md)
-
-## Alcance de esta fase
-
-- Auth con Supabase email/password.
-- Layout protegido para usuarios autenticados.
-- CRUD operativo de clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders y documentos.
-- Modulo de clientes con rubros, issues y responsables internos.
-- Administracion de usuarios desde Configuracion para usuarios `admin`.
-- Busqueda global sobre clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders y documentos, con busquedas guardadas por usuario.
-- RLS por membresia de organizacion.
-
-No incluye integraciones externas ni portal de clientes.
+- Dashboard.
+- Clientes y contactos.
+- Tareas.
+- Interacciones.
+- Reportes enviados.
+- Alertas enviadas.
+- Stakeholders.
+- Documentos y links externos.
+- Busqueda global y busquedas guardadas.
+- Configuracion.
+- Administracion de usuarios.
+- Historial completo por cliente.
+- Activity log y notificaciones internas basicas.
 
 ## Fuera de V1
 
-- Honorarios queda fuera del alcance operativo de V1. La tabla `client_fees` puede existir en Supabase por compatibilidad con migraciones previas, pero la UI y las acciones de gestion de honorarios no se exponen en la aplicacion.
-- La busqueda global no incluye honorarios ni informacion de portal externo.
+- Honorarios.
+- Portal de clientes.
+- Google Calendar.
+- Gmail.
+- Google Drive API.
+- WhatsApp.
+- IA.
+- Envio real de emails.
 
-## Fase 2
+## Documentacion
 
-- Listado filtrable de clientes con TanStack Table.
-- Formularios de clientes/contactos con React Hook Form y Zod.
-- Detalle de cliente con resumen, contactos, rubros, issues y responsables.
-- Configuracion minima de rubros e issues.
-- Activity log para cambios importantes.
+- Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
+- Guia para administradores: [docs/admin-guide.md](./docs/admin-guide.md)
+- Criterios UX/UI: [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md)
+- Deploy GitHub -> Vercel: [docs/vercel-github-deploy.md](./docs/vercel-github-deploy.md)
+- Deploy staging Supabase/Vercel: [DEPLOYMENT_STAGING.md](./DEPLOYMENT_STAGING.md)
 
-## Fase 3
+## Setup local
 
-- Modulo completo de tareas internas con lista, Kanban y detalle.
-- Responsables multiples, comentarios, actividad y notificaciones internas al asignar.
-- Tareas conectadas a ficha de cliente y dashboard con metricas reales.
-- Modelo preparado para recurrencia simple sin generar ocurrencias automaticamente.
+1. Copiar `.env.example` a `.env.local`.
+2. Completar:
 
-## Fase 4
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
 
-- Modulo de calls/interacciones con listado filtrable, creacion, edicion y detalle.
-- Clientes multiples, participantes internos y participantes externos flexibles.
-- Tareas derivadas desde interacciones con `origin_type = interaction`.
-- Interacciones conectadas a ficha de cliente y dashboard con metricas por tipo.
+3. Instalar dependencias:
 
-## Fase 5
+```bash
+npm install
+```
 
-- Modulos de reportes enviados y alertas enviadas con listado filtrable, formularios y detalle.
-- Clientes, destinatarios, responsables, links externos y metadatos de envio.
-- Tareas de seguimiento con `origin_type = report` o `origin_type = alert`.
-- Reportes y alertas conectados a ficha de cliente y dashboard.
+4. Levantar entorno local:
+
+```bash
+npm run dev
+```
+
+## Comandos basicos
+
+```bash
+npm run dev
+npm run typecheck
+npm run lint
+npm run build
+```
+
+## Seguridad operativa
+
+- `.env.local` no debe versionarse.
+- `SUPABASE_SERVICE_ROLE_KEY` es server-side y nunca debe tener prefijo `NEXT_PUBLIC_`.
+- Los documentos subidos se guardan en bucket privado y se abren con signed URLs.
+- El rol `external_client` esta reservado para futuro y no debe usarse operativamente en V1.

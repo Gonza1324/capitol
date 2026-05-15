@@ -4,16 +4,16 @@ import { PageHeader } from "@/components/page-header";
 export function ModulePlaceholder({ title }: { title: string }) {
   return (
     <>
-      <PageHeader title={title} description="Ruta base preparada para la V1." />
+      <PageHeader title={title} description="Modulo interno en preparacion." />
       <Card>
         <CardHeader>
-          <CardTitle>Modulo preparado</CardTitle>
+          <CardTitle>Modulo en preparacion</CardTitle>
           <CardDescription>
-            La estructura queda lista para conectar tablas, filtros y flujos especificos en la siguiente iteracion.
+            Esta seccion todavia no esta disponible para uso operativo.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Sin integraciones externas, portal de clientes ni automatizaciones en esta fase.
+          Usa los modulos principales del menu para cargar y consultar informacion.
         </CardContent>
       </Card>
     </>
