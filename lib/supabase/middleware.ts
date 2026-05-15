@@ -42,6 +42,7 @@ export async function updateSession(request: NextRequest) {
     || request.nextUrl.pathname.startsWith("/stakeholders")
     || request.nextUrl.pathname.startsWith("/documents")
     || request.nextUrl.pathname.startsWith("/search")
+    || request.nextUrl.pathname.startsWith("/notifications")
     || request.nextUrl.pathname.startsWith("/settings");
 
   if (isProtectedRoute && !user) {

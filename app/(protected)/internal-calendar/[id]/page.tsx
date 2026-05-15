@@ -106,7 +106,7 @@ export default async function InternalCalendarEventDetailPage({
             <Info label="Sync futura"><Badge variant="muted">{detail.sync_status}</Badge></Info>
             <Info label="Responsable">{assigned?.full_name || assigned?.email || "-"}</Info>
             <Info label="Todo el dia">{detail.all_day ? "Si" : "No"}</Info>
-            <Info label="Cliente">{client ? <Link className="text-primary underline" href={`/clients/${client.id}`}>{client.name}</Link> : "-"}</Info>
+            <Info label="Cliente">{client ? <Link className="text-primary underline" href={`/clients/${client.id}`}>{client.name}</Link> : "Evento sin cliente"}</Info>
             <Info label="Contacto">{contact?.full_name || "-"}</Info>
             <Info label="Stakeholder">{stakeholder ? <Link className="text-primary underline" href={`/stakeholders/${stakeholder.id}`}>{stakeholder.full_name}</Link> : "-"}</Info>
             <Info label="Tarea asociada">{task ? <Link className="text-primary underline" href={`/tasks/${task.id}`}>{task.title}</Link> : "-"}</Info>
@@ -130,10 +130,10 @@ export default async function InternalCalendarEventDetailPage({
                 <Button type="submit" className="w-full" variant="outline">Posponer</Button>
               </form>
               <form action={createInteractionFromInternalCalendarEvent.bind(null, detail.id)}>
-                <Button type="submit" className="w-full" disabled={Boolean(interaction)}>Crear interaccion</Button>
+                <Button type="submit" className="w-full" disabled={Boolean(interaction)}>Registrar interacción</Button>
               </form>
               <ConfirmAction
-                label="Cancelar"
+                label="Cancelar evento"
                 variant="destructive"
                 confirmMessage={`Cancelar ${detail.title}?`}
                 action={archiveInternalCalendarEvent.bind(null, detail.id, "/internal-calendar?toast=internal_calendar_event_cancelled")}

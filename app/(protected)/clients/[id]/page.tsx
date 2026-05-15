@@ -383,7 +383,7 @@ export default async function ClientDetailPage({
 
           <ClientTasksSection clientId={detail.id} tasks={taskRows} />
           <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
-          <ClientInternalCalendarEventsSection clientId={detail.id} events={(clientInternalCalendarEvents || []) as unknown as ClientInternalCalendarEventRow[]} />
+          <ClientInternalCalendarEventsSection clientId={detail.id} events={(clientInternalCalendarEvents || []) as unknown as ClientInternalCalendarEventRow[]} tasks={taskRows} />
           <ClientReportsSection clientId={detail.id} reports={(clientReports || []) as unknown as ClientReportRow[]} profileLabels={profileLabels} />
           <ClientAlertsSection clientId={detail.id} alerts={(clientAlerts || []) as unknown as ClientAlertRow[]} profileLabels={profileLabels} />
           <ClientStakeholdersSection clientId={detail.id} stakeholders={(clientStakeholders || []) as unknown as ClientStakeholderRow[]} />
@@ -614,10 +614,14 @@ function ClientInteractionsSection({ clientId, interactions }: { clientId: strin
   );
 }
 
-function ClientInternalCalendarEventsSection({ clientId, events }: { clientId: string; events: ClientInternalCalendarEventRow[] }) {
+function ClientInternalCalendarEventsSection({ clientId, events, tasks }: { clientId: string; events: ClientInternalCalendarEventRow[]; tasks: ClientTaskRow[] }) {
   const upcoming = events.filter((event) => new Date(event.start_at || "").getTime() >= Date.now()).slice(0, 6);
   const recent = events.filter((event) => new Date(event.start_at || "").getTime() < Date.now()).slice(0, 6);
   const pendingInteraction = events.filter((event) => !event.interaction_id && !["completed", "cancelled"].includes(event.status)).slice(0, 6);
+  const taskDeadlines = tasks
+    .filter((task) => task.due_date && !["completed", "cancelled"].includes(task.status))
+    .sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""))
+    .slice(0, 6);
 
   return (
     <Card>
@@ -628,10 +632,11 @@ function ClientInternalCalendarEventsSection({ clientId, events }: { clientId: s
         </div>
         <Button asChild><Link href={`/internal-calendar/new?clientId=${clientId}`}>Nuevo evento</Link></Button>
       </CardHeader>
-      <CardContent className="grid gap-4 lg:grid-cols-3">
+      <CardContent className="grid gap-4 lg:grid-cols-4">
         <ClientEventGroup title="Proximos" events={upcoming} empty="Sin proximos eventos." />
         <ClientEventGroup title="Recientes" events={recent} empty="Sin eventos recientes." />
-        <ClientEventGroup title="Pendientes de interaccion" events={pendingInteraction} empty="Sin eventos pendientes." />
+        <ClientEventGroup title="Sin interacción creada" events={pendingInteraction} empty="Sin eventos pendientes." />
+        <ClientTaskDeadlineGroup tasks={taskDeadlines} />
       </CardContent>
     </Card>
   );
@@ -657,6 +662,24 @@ function ClientEventGroup({ title, events, empty }: { title: string; events: Cli
           </Link>
         );
       }) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
+    </div>
+  );
+}
+
+function ClientTaskDeadlineGroup({ tasks }: { tasks: ClientTaskRow[] }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium">Tareas con vencimiento</h3>
+      {tasks.length ? tasks.map((task) => (
+        <Link key={task.id} href={`/tasks/${task.id}`} className="block rounded-md border p-3 text-sm hover:bg-accent">
+          <p className="font-medium">{task.title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{task.due_date} - Tarea con vencimiento</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            <TaskStatusBadge status={task.status} />
+            <TaskPriorityBadge priority={task.priority} />
+          </div>
+        </Link>
+      )) : <p className="rounded-md border p-3 text-sm text-muted-foreground">Sin tareas próximas a vencer.</p>}
     </div>
   );
 }

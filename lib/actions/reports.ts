@@ -105,11 +105,23 @@ export async function updateReportRecord(id: string, payload: ReportFormValues, 
 export async function changeReportStatus(id: string, status: "sent" | "approved", clientIds: string[] = [], redirectTo?: string) {
   const { supabase, user, profile } = await getCurrentProfile();
   assertInternalRole(profile?.role);
+  const { data: report } = await supabase.from("reports").select("title, responsible_id").eq("id", id).maybeSingle();
   const patch = status === "sent"
     ? { status: "sent", sent_at: new Date().toISOString() }
     : { status: "approved", approved_by: user.id, approved_at: new Date().toISOString() };
   const { error } = await supabase.from("reports").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
+  const detail = report as { title?: string | null; responsible_id?: string | null } | null;
+  if (status === "approved" && detail?.responsible_id && detail.responsible_id !== user.id) {
+    await supabase.from("notifications").insert({
+      user_id: detail.responsible_id,
+      type: "report_approved",
+      title: "Reporte aprobado",
+      body: detail.title,
+      entity_type: "report",
+      entity_id: id
+    });
+  }
   await logActivity({ supabase, actorId: user.id, action: status === "sent" ? "report_sent" : "report_approved", entityType: "report", entityId: id });
   revalidateReportPaths(id, clientIds);
   redirect(redirectTo || `/reports/${id}?toast=${status === "sent" ? "report_sent" : "report_approved"}`);

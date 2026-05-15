@@ -53,6 +53,7 @@ La app esta desplegada y lista para uso interno inicial. Cuenta con deploy autom
 - Backlog V2: [docs/v2-backlog.md](./docs/v2-backlog.md)
 - Plan de adopcion interna: [docs/internal-adoption-plan.md](./docs/internal-adoption-plan.md)
 - Calendario interno: [docs/internal-calendar.md](./docs/internal-calendar.md)
+- Notificaciones internas: [docs/notifications.md](./docs/notifications.md)
 - Integracion Google Calendar: [docs/google-calendar-integration.md](./docs/google-calendar-integration.md)
 - Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
 - Guia para administradores: [docs/admin-guide.md](./docs/admin-guide.md)

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
+import { ConfirmAction } from "@/components/feedback/confirm-action";
 import { InternalCalendarStatusBadge, InternalCalendarTypeBadge } from "@/components/internal-calendar/internal-calendar-badges";
 import { ToastMessage } from "@/components/feedback/toast-message";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { archiveInternalCalendarEvent, changeInternalCalendarEventStatus, createInteractionFromInternalCalendarEvent } from "@/lib/actions/internal-calendar";
 import { getInternalCalendarEvents } from "@/lib/data/internal-calendar";
 import { firstRelation } from "@/lib/data/interactions";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +26,8 @@ type SearchParams = {
   responsible?: string;
   mine?: string;
   withoutClient?: string;
+  withoutInteraction?: string;
+  range?: string;
 };
 
 type CalendarItem = {
@@ -38,6 +42,8 @@ type CalendarItem = {
   assignedTo?: string | null;
   clientId?: string | null;
   responsibleId?: string | null;
+  interactionId?: string | null;
+  taskId?: string | null;
 };
 
 export default async function InternalCalendarPage({
@@ -56,9 +62,14 @@ export default async function InternalCalendarPage({
   const monthDate = params.month ? new Date(`${params.month}-01T12:00:00`) : new Date();
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
   const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
+  const today = new Date().toISOString().slice(0, 10);
+  const weekEnd = new Date();
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const queryStart = new Date(Math.min(monthStart.getTime(), new Date(`${today}T00:00:00`).getTime()));
+  const queryEnd = new Date(Math.max(monthEnd.getTime(), weekEnd.getTime()));
   const selectedDay = params.day || new Date().toISOString().slice(0, 10);
   const [{ events, taskDeadlines }, { data: clients }, { data: profiles }] = await Promise.all([
-    getInternalCalendarEvents({ from: monthStart.toISOString(), to: monthEnd.toISOString() }),
+    getInternalCalendarEvents({ from: queryStart.toISOString(), to: queryEnd.toISOString() }),
     supabase.from("clients").select("id, name").is("deleted_at", null).order("name"),
     supabase.from("profiles").select("id, full_name, email").order("email")
   ]);
@@ -78,7 +89,9 @@ export default async function InternalCalendarPage({
         clientName: client?.name,
         assignedTo: assigned?.full_name || assigned?.email || null,
         clientId: event.client_id,
-        responsibleId: event.assigned_to
+        responsibleId: event.assigned_to,
+        interactionId: event.interaction_id,
+        taskId: event.task_id
       };
     }),
     ...taskDeadlines.map((task) => {
@@ -92,12 +105,19 @@ export default async function InternalCalendarPage({
         type: "task_deadline",
         status: task.status,
         clientName: client?.name,
-        clientId: task.client_id
+        clientId: task.client_id,
+        taskId: task.id
       };
     })
   ];
   const filteredItems = filterItems(allItems, params, user?.id || "");
   const selectedItems = filteredItems.filter((item) => dateKey(item.date) === selectedDay);
+  const todayItems = filteredItems
+    .filter((item) => dateKey(item.date) === today)
+    .sort(sortPendingFirst);
+  const weekItems = filteredItems
+    .filter((item) => isWithinNextDays(item.date, 7))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const upcomingItems = filteredItems.filter((item) => new Date(item.date).getTime() >= Date.now()).slice(0, 10);
   const overdueItems = filteredItems.filter((item) => new Date(item.date).getTime() < Date.now() && !["completed", "cancelled"].includes(item.status)).slice(0, 10);
   const days = buildMonthDays(monthStart, monthEnd);
@@ -112,6 +132,15 @@ export default async function InternalCalendarPage({
         description="Agenda interna de reuniones, llamados, recordatorios y vencimientos de tareas."
         actions={<Button asChild><Link href="/internal-calendar/new"><CalendarPlus className="h-4 w-4" /> Nuevo evento</Link></Button>}
       />
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Button asChild variant={params.range === "today" ? "default" : "outline"} size="sm"><Link href={`/internal-calendar?range=today&day=${today}&month=${today.slice(0, 7)}`}>Hoy</Link></Button>
+        <Button asChild variant={params.range === "week" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?range=week">Esta semana</Link></Button>
+        <Button asChild variant={params.mine === "1" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?mine=1">Mis eventos</Link></Button>
+        <Button asChild variant={params.withoutClient === "1" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?withoutClient=1">Sin cliente asociado</Link></Button>
+        <Button asChild variant={params.withoutInteraction === "1" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?withoutInteraction=1">Sin interacción creada</Link></Button>
+        <Button asChild variant={params.type === "task_deadline" ? "default" : "outline"} size="sm"><Link href="/internal-calendar?type=task_deadline&range=week">Tareas próximas a vencer</Link></Button>
+      </div>
 
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -137,6 +166,7 @@ export default async function InternalCalendarPage({
             </select>
             <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="mine" value="1" defaultChecked={params.mine === "1"} /> Mis eventos</label>
             <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="withoutClient" value="1" defaultChecked={params.withoutClient === "1"} /> Sin cliente</label>
+            <label className="flex h-10 items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" name="withoutInteraction" value="1" defaultChecked={params.withoutInteraction === "1"} /> Sin interacción</label>
             <div className="flex gap-2 md:col-span-4 xl:col-span-8">
               <Button type="submit" variant="secondary">Filtrar</Button>
               <Button asChild type="button" variant="outline"><Link href="/internal-calendar">Limpiar filtros</Link></Button>
@@ -182,8 +212,10 @@ export default async function InternalCalendarPage({
         </Card>
 
         <div className="space-y-6">
-          <EventListCard title={`Eventos del ${selectedDay}`} items={selectedItems} empty="No hay eventos para este dia." />
-          <EventListCard title="Proximos eventos" items={upcomingItems} empty="Sin proximos eventos." />
+          <EventListCard title="Hoy" items={todayItems} empty="No hay eventos ni tareas con vencimiento para hoy." />
+          <EventListCard title="Esta semana" items={weekItems} empty="Sin eventos en los próximos 7 días." />
+          <EventListCard title={`Eventos del ${selectedDay}`} items={selectedItems} empty="No hay eventos para este día." />
+          <EventListCard title="Próximos eventos" items={upcomingItems} empty="Sin próximos eventos." />
           <EventListCard title="Vencidos / pendientes" items={overdueItems} empty="Sin eventos vencidos pendientes." danger />
         </div>
       </div>
@@ -197,18 +229,49 @@ function EventListCard({ title, items, empty, danger = false }: { title: string;
       <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
       <CardContent className="space-y-2">
         {items.length ? items.map((item) => (
-          <Link key={`${item.kind}-${item.id}`} href={item.href} className={`block rounded-md border p-3 text-sm hover:bg-accent ${danger ? "border-destructive/40" : ""}`}>
+          <div key={`${item.kind}-${item.id}`} className={`rounded-md border p-3 text-sm ${danger ? "border-destructive/40" : ""}`}>
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-medium">{item.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(item.date)} {item.clientName ? `- ${item.clientName}` : ""}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatDateTime(item.date)} - {item.clientName || "Evento sin cliente"}
+                  {item.kind === "task" ? " - Tarea con vencimiento" : ""}
+                  {item.kind === "event" && !item.interactionId ? " - Pendiente de interacción" : ""}
+                </p>
               </div>
               <div className="flex flex-wrap justify-end gap-1">
                 <InternalCalendarTypeBadge type={item.type} />
                 <InternalCalendarStatusBadge status={item.status} />
               </div>
             </div>
-          </Link>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm"><Link href={item.href}>Ver detalle</Link></Button>
+              {item.kind === "event" ? (
+                <>
+                  <Button asChild variant="outline" size="sm"><Link href={`/internal-calendar/${item.id}/edit`}>Editar</Link></Button>
+                  <form action={changeInternalCalendarEventStatus.bind(null, item.id, "completed", "/internal-calendar?toast=internal_calendar_event_completed")}>
+                    <Button type="submit" variant="outline" size="sm">Completar</Button>
+                  </form>
+                  <form action={changeInternalCalendarEventStatus.bind(null, item.id, "postponed", "/internal-calendar?toast=internal_calendar_event_postponed")}>
+                    <Button type="submit" variant="outline" size="sm">Posponer</Button>
+                  </form>
+                  {!item.interactionId ? (
+                    <form action={createInteractionFromInternalCalendarEvent.bind(null, item.id)}>
+                      <Button type="submit" size="sm">Registrar interacción</Button>
+                    </form>
+                  ) : null}
+                  <ConfirmAction
+                    label="Cancelar evento"
+                    variant="destructive"
+                    confirmMessage={`Cancelar ${item.title}?`}
+                    action={archiveInternalCalendarEvent.bind(null, item.id, "/internal-calendar?toast=internal_calendar_event_cancelled")}
+                  />
+                </>
+              ) : null}
+              {item.clientId ? <Button asChild variant="ghost" size="sm"><Link href={`/clients/${item.clientId}`}>Ver cliente</Link></Button> : null}
+              {item.taskId ? <Button asChild variant="ghost" size="sm"><Link href={`/tasks/${item.taskId}`}>Ver tarea</Link></Button> : null}
+            </div>
+          </div>
         )) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
       </CardContent>
     </Card>
@@ -237,8 +300,28 @@ function filterItems(items: CalendarItem[], params: SearchParams, currentUserId:
     if (params.responsible && item.responsibleId !== params.responsible) return false;
     if (params.mine === "1" && item.responsibleId !== currentUserId) return false;
     if (params.withoutClient === "1" && item.clientId) return false;
+    if (params.withoutInteraction === "1" && (item.kind !== "event" || item.interactionId)) return false;
+    if (params.range === "today" && dateKey(item.date) !== new Date().toISOString().slice(0, 10)) return false;
+    if (params.range === "week" && !isWithinNextDays(item.date, 7)) return false;
     return true;
   });
+}
+
+function sortPendingFirst(a: CalendarItem, b: CalendarItem) {
+  const aDone = ["completed", "cancelled"].includes(a.status);
+  const bDone = ["completed", "cancelled"].includes(b.status);
+  if (aDone !== bDone) return aDone ? 1 : -1;
+  return new Date(a.date).getTime() - new Date(b.date).getTime();
+}
+
+function isWithinNextDays(value: string, days: number) {
+  const time = new Date(value).getTime();
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + days);
+  end.setHours(23, 59, 59, 999);
+  return time >= start.getTime() && time <= end.getTime();
 }
 
 function dateKey(value: string) {

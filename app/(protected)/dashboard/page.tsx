@@ -81,7 +81,8 @@ export default async function DashboardPage() {
     { data: reviewReportClientRows },
     { data: upcomingInternalEventRows },
     { data: todayInternalEventRows },
-    { data: overdueInternalEventRows }
+    { data: overdueInternalEventRows },
+    { data: noInteractionInternalEventRows }
   ] = await Promise.all([
     supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active").is("deleted_at", null),
     supabase.from("tasks").select("id", { count: "exact", head: true }).in("status", ["pending", "in_progress", "in_review"]).is("deleted_at", null),
@@ -107,7 +108,8 @@ export default async function DashboardPage() {
     supabase.from("report_clients").select("clients(id, name), reports!inner(status, title)").in("reports.status", ["draft", "in_review"]).is("reports.deleted_at", null).limit(100),
     supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").gte("start_at", now.toISOString()).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: true }).limit(6),
     supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").gte("start_at", `${today}T00:00:00`).lte("start_at", `${today}T23:59:59`).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: true }).limit(6),
-    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").lt("start_at", now.toISOString()).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: false }).limit(6)
+    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").lt("start_at", now.toISOString()).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: false }).limit(6),
+    supabase.from("internal_calendar_events").select("id, title, event_type, status, start_at, end_at, clients(id, name)").is("interaction_id", null).not("status", "in", "(completed,cancelled)").is("deleted_at", null).order("start_at", { ascending: true }).limit(6)
   ]);
 
   const myTasks = ((myTaskRows || []) as Array<{ tasks: TaskWithClient | TaskWithClient[] | null }>).flatMap((row) => {
@@ -120,6 +122,7 @@ export default async function DashboardPage() {
   const upcomingInternalEvents = (upcomingInternalEventRows || []) as unknown as DashboardInternalEvent[];
   const todayInternalEvents = (todayInternalEventRows || []) as unknown as DashboardInternalEvent[];
   const overdueInternalEvents = (overdueInternalEventRows || []) as unknown as DashboardInternalEvent[];
+  const noInteractionInternalEvents = (noInteractionInternalEventRows || []) as unknown as DashboardInternalEvent[];
   const activity = (recentActivityRows || []) as unknown as ActivityRow[];
   const attention = buildAttentionClients({
     overdueClientRows: overdueClientRows || [],
@@ -203,10 +206,12 @@ export default async function DashboardPage() {
             </div>
             <Link href="/internal-calendar" className="text-sm font-medium text-primary hover:underline">Ver calendario</Link>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <InternalEventMiniList title="Hoy" events={todayInternalEvents} empty="Sin eventos para hoy." />
             <InternalEventMiniList title="Proximos" events={upcomingInternalEvents} empty="Sin proximos eventos." />
-            <InternalEventMiniList title="Vencidos" events={overdueInternalEvents} empty="Sin eventos vencidos." danger />
+            <TaskDueMiniList title="Tareas próximas" tasks={upcomingTasks.slice(0, 6)} empty="Sin tareas próximas." />
+            <InternalEventMiniList title="Sin interacción creada" events={noInteractionInternalEvents} empty="Sin eventos pendientes de interacción." />
+            {overdueInternalEvents.length ? <InternalEventMiniList title="Vencidos" events={overdueInternalEvents} empty="Sin eventos vencidos." danger /> : null}
           </CardContent>
         </Card>
       </section>
@@ -260,6 +265,24 @@ function InternalEventMiniList({ title, events, empty, danger = false }: { title
               <InternalCalendarTypeBadge type={event.event_type} />
               <InternalCalendarStatusBadge status={event.status} />
             </div>
+          </Link>
+        );
+      }) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}
+    </div>
+  );
+}
+
+function TaskDueMiniList({ title, tasks, empty }: { title: string; tasks: TaskWithClient[]; empty: string }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {tasks.length ? tasks.map((task) => {
+        const client = firstRelation(task.clients);
+        return (
+          <Link key={task.id} href={`/tasks/${task.id}`} className="block rounded-md border p-3 text-sm hover:bg-accent">
+            <p className="font-medium">{task.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{task.due_date || "Sin fecha"} {client ? `- ${client.name}` : ""}</p>
+            <Badge className="mt-2" variant={task.priority === "urgent" || task.priority === "high" ? "warning" : "muted"}>Tarea con vencimiento</Badge>
           </Link>
         );
       }) : <p className="rounded-md border p-3 text-sm text-muted-foreground">{empty}</p>}

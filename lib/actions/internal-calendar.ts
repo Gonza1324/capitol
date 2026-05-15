@@ -112,7 +112,7 @@ export async function changeInternalCalendarEventStatus(id: string, status: Inte
   const { supabase, user, profile } = await getCurrentProfile();
   assertInternalRole(profile?.role);
 
-  const { data: previous } = await supabase.from("internal_calendar_events").select("client_id").eq("id", id).maybeSingle();
+  const { data: previous } = await supabase.from("internal_calendar_events").select("client_id, assigned_to, title").eq("id", id).maybeSingle();
   const { error } = await supabase
     .from("internal_calendar_events")
     .update({ status })
@@ -137,7 +137,19 @@ export async function changeInternalCalendarEventStatus(id: string, status: Inte
     entityId: id
   });
 
-  const clientId = (previous as { client_id?: string | null } | null)?.client_id;
+  const previousEvent = previous as { client_id?: string | null; assigned_to?: string | null; title?: string | null } | null;
+  if (previousEvent?.assigned_to && previousEvent.assigned_to !== user.id && ["postponed", "cancelled"].includes(status)) {
+    await supabase.from("notifications").insert({
+      user_id: previousEvent.assigned_to,
+      type: status === "postponed" ? "internal_calendar_event_postponed" : "internal_calendar_event_cancelled",
+      title: status === "postponed" ? "Evento pospuesto" : "Evento cancelado",
+      body: previousEvent.title,
+      entity_type: "internal_calendar_event",
+      entity_id: id
+    });
+  }
+
+  const clientId = previousEvent?.client_id;
   revalidateInternalCalendarPaths(id, clientId);
   redirect(redirectTo || `/internal-calendar/${id}?toast=${action}`);
 }
