@@ -12,9 +12,9 @@ import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Check, Eye, KanbanSquare, Lis
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { archiveTaskRecord, changeTaskStatus } from "@/lib/actions/tasks";
-import { taskStatuses, type TaskStatus } from "@/lib/validators/task";
-import { isOverdue, TaskPriorityBadge, TaskStatusBadge } from "./task-badges";
+import { archiveTaskRecord, changeTaskPriority, changeTaskStatus } from "@/lib/actions/tasks";
+import { taskPriorities, taskStatuses, type TaskPriority, type TaskStatus } from "@/lib/validators/task";
+import { formatTaskStatus, isOverdue, TaskPriorityBadge, TaskStatusBadge } from "./task-badges";
 
 export type TaskListRow = {
   id: string;
@@ -83,7 +83,7 @@ export function TaskWorkspace({
     <div className="space-y-4">
       <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3 lg:grid-cols-7">
         <Input className="md:col-span-3 lg:col-span-2" placeholder="Buscar por titulo, descripcion, cliente..." value={search} onChange={(event) => setSearch(event.target.value)} />
-        <FilterSelect label="Estado" value={filters.status} options={taskStatuses as unknown as string[]} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
+        <FilterSelect label="Estado" value={filters.status} options={taskStatuses.map((status) => ({ label: formatTaskStatus(status), value: status }))} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
         <FilterSelect label="Prioridad" value={filters.priority} options={["low", "medium", "high", "urgent"]} onChange={(value) => setFilters((current) => ({ ...current, priority: value }))} />
         <FilterSelect label="Cliente" value={filters.clientId} options={clients.map((client) => ({ label: client.name, value: client.id }))} onChange={(value) => setFilters((current) => ({ ...current, clientId: value }))} />
         <FilterSelect label="Responsable" value={filters.assigneeId} options={profiles.map((profile) => ({ label: profile.label, value: profile.id }))} onChange={(value) => setFilters((current) => ({ ...current, assigneeId: value }))} />
@@ -141,7 +141,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
       {
         id: "priority",
         header: () => <SortableHeader label="Prioridad" active={sort?.key === "priority"} direction={sort?.direction} onClick={() => toggleSort("priority")} />,
-        cell: ({ row }) => <TaskPriorityBadge priority={row.original.priority} />
+        cell: ({ row }) => <TaskPrioritySelect task={row.original} />
       },
       { header: "Responsables", cell: ({ row }) => <BadgeList values={row.original.assignees.map((item) => item.label)} empty="Sin responsable" /> },
       {
@@ -260,7 +260,24 @@ function TaskStatusSelect({ task }: { task: TaskListRow }) {
         await changeTaskStatus(task.id, event.target.value as TaskStatus, task.client_id, "/tasks?toast=task_status_changed");
       })}
     >
-      {taskStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+      {taskStatuses.map((status) => <option key={status} value={status}>{formatTaskStatus(status)}</option>)}
+    </select>
+  );
+}
+
+function TaskPrioritySelect({ task }: { task: TaskListRow }) {
+  const [isPending, startTransition] = useTransition();
+  return (
+    <select
+      className="h-9 min-w-28 rounded-md border bg-background px-2 text-xs"
+      value={task.priority}
+      disabled={isPending}
+      aria-label={`Cambiar prioridad de ${task.title}`}
+      onChange={(event) => startTransition(async () => {
+        await changeTaskPriority(task.id, event.target.value as TaskPriority, task.client_id, "/tasks?toast=task_updated");
+      })}
+    >
+      {taskPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
     </select>
   );
 }
@@ -309,7 +326,7 @@ function TaskCard({ task }: { task: TaskListRow }) {
           await changeTaskStatus(task.id, event.target.value as TaskStatus, task.client_id, "/tasks?toast=task_status_changed");
         })}
       >
-        {taskStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+        {taskStatuses.map((status) => <option key={status} value={status}>{formatTaskStatus(status)}</option>)}
       </select>
     </div>
   );

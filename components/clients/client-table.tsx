@@ -6,12 +6,10 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { Eye, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { archiveClientRecord } from "@/lib/actions/clients";
 
@@ -29,54 +27,18 @@ export type ClientListRow = {
   assignments: { id: string; label: string; role: string | null }[];
 };
 
-type Filters = {
-  status: string;
-  clientType: string;
-  industryId: string;
-  interestId: string;
-  assigneeId: string;
-};
-
 export function ClientTable({
-  data,
-  industries,
-  interests,
-  profiles
+  data
 }: {
   data: ClientListRow[];
   industries: { id: string; name: string }[];
   interests: { id: string; name: string }[];
   profiles: { id: string; label: string }[];
 }) {
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [filters, setFilters] = useState<Filters>({ status: "", clientType: "", industryId: "", interestId: "", assigneeId: "" });
+  const [industrySort, setIndustrySort] = useState<"asc" | "desc" | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filteredData = useMemo(() => {
-    const needle = globalFilter.trim().toLowerCase();
-    return data.filter((client) => {
-      const haystack = [
-        client.name,
-        client.legal_name,
-        client.tax_id,
-        ...client.industries.map((item) => item.name),
-        ...client.interests.map((item) => item.name),
-        ...client.assignments.map((item) => item.label)
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        (!needle || haystack.includes(needle)) &&
-        (!filters.status || client.status === filters.status) &&
-        (!filters.clientType || client.client_type === filters.clientType) &&
-        (!filters.industryId || client.industries.some((item) => item.id === filters.industryId)) &&
-        (!filters.interestId || client.interests.some((item) => item.id === filters.interestId)) &&
-        (!filters.assigneeId || client.assignments.some((item) => item.id === filters.assigneeId))
-      );
-    });
-  }, [data, filters, globalFilter]);
+  const sortedData = useMemo(() => sortClientsByIndustry(data, industrySort), [data, industrySort]);
 
   const columns = useMemo<ColumnDef<ClientListRow>[]>(
     () => [
@@ -99,7 +61,17 @@ export function ClientTable({
       },
       { header: "Tipo", accessorKey: "client_type" },
       {
-        header: "Rubros",
+        id: "industries",
+        header: () => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-sm font-medium hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => setIndustrySort((current) => current === "asc" ? "desc" : "asc")}
+          >
+            <span>Rubros</span>
+            {industrySort === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : industrySort === "desc" ? <ArrowDown className="h-3.5 w-3.5" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
+          </button>
+        ),
         cell: ({ row }) => <BadgeList items={row.original.industries.map((item) => item.name)} empty="Sin rubros" />
       },
       {
@@ -138,14 +110,13 @@ export function ClientTable({
         )
       }
     ],
-    [isPending]
+    [industrySort, isPending]
   );
 
   const table = useReactTable({
-    data: filteredData,
+    data: sortedData,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel()
+    getCoreRowModel: getCoreRowModel()
   });
 
   if (!data.length) {
@@ -160,23 +131,6 @@ export function ClientTable({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3 lg:grid-cols-6">
-        <Input
-          className="md:col-span-3 lg:col-span-2"
-          placeholder="Buscar por nombre, CUIT, rubro, issue..."
-          value={globalFilter}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-        />
-        <FilterSelect value={filters.status} label="Estado" options={["active", "prospect", "paused", "former", "potential", "archived"]} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
-        <FilterSelect value={filters.clientType} label="Tipo" options={["company", "chamber", "ngo", "person", "public_agency", "embassy", "association", "other"]} onChange={(value) => setFilters((current) => ({ ...current, clientType: value }))} />
-        <FilterSelect value={filters.industryId} label="Rubro" options={industries.map((item) => ({ label: item.name, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, industryId: value }))} />
-        <FilterSelect value={filters.interestId} label="Issue" options={interests.map((item) => ({ label: item.name, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, interestId: value }))} />
-        <FilterSelect value={filters.assigneeId} label="Responsable" options={profiles.map((item) => ({ label: item.label, value: item.id }))} onChange={(value) => setFilters((current) => ({ ...current, assigneeId: value }))} />
-        <Button type="button" variant="outline" onClick={() => { setGlobalFilter(""); setFilters({ status: "", clientType: "", industryId: "", interestId: "", assigneeId: "" }); }}>
-          Limpiar filtros
-        </Button>
-      </div>
-
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50 text-left">
@@ -202,12 +156,6 @@ export function ClientTable({
             ))}
           </tbody>
         </table>
-        {!filteredData.length ? (
-          <div className="p-8 text-center">
-            <h2 className="text-base font-semibold">No hay resultados</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Probá limpiar filtros o ajustar la busqueda.</p>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -223,24 +171,18 @@ function BadgeList({ items, empty }: { items: string[]; empty: string }) {
   );
 }
 
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange
-}: {
-  label: string;
-  value: string;
-  options: (string | { label: string; value: string })[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 rounded-md border bg-background px-3 text-sm">
-      <option value="">{label}</option>
-      {options.map((option) => {
-        const item = typeof option === "string" ? { label: option, value: option } : option;
-        return <option key={item.value} value={item.value}>{item.label}</option>;
-      })}
-    </select>
-  );
+function sortClientsByIndustry(data: ClientListRow[], direction: "asc" | "desc" | null) {
+  if (!direction) return data;
+  const multiplier = direction === "asc" ? 1 : -1;
+  return [...data].sort((a, b) => {
+    const aIndustry = industrySortValue(a);
+    const bIndustry = industrySortValue(b);
+    const industryDiff = aIndustry.localeCompare(bIndustry, "es", { sensitivity: "base" });
+    if (industryDiff) return industryDiff * multiplier;
+    return a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+  });
+}
+
+function industrySortValue(client: ClientListRow) {
+  return client.industries.map((item) => item.name).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }))[0] || "ZZZ Sin rubro";
 }

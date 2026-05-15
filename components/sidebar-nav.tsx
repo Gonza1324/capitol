@@ -34,7 +34,7 @@ const bottomItems = [
   { href: "/internal-calendar", label: "Calendario", icon: CalendarDays },
   { href: "/reports", label: "Reportes", icon: FileText },
   { href: "/alerts", label: "Alertas", icon: Bell },
-  { href: "/documents", label: "Documentos", icon: Library },
+  { href: "/documents", label: "Entregables", icon: Library },
   { href: "/search", label: "Busqueda", icon: Search }
 ];
 

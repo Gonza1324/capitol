@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { ToastMessage } from "@/components/feedback/toast-message";
 import { ConfirmAction } from "@/components/feedback/confirm-action";
 import { TaskCommentForm } from "@/components/tasks/task-comment-form";
-import { isOverdue, TaskPriorityBadge, TaskStatusBadge } from "@/components/tasks/task-badges";
+import { formatTaskStatus, isOverdue, TaskPriorityBadge, TaskStatusBadge } from "@/components/tasks/task-badges";
 import { archiveTaskRecord, changeTaskStatus, createTaskComment } from "@/lib/actions/tasks";
 import { firstRelation } from "@/lib/data/tasks";
 import { createClient } from "@/lib/supabase/server";
@@ -154,7 +154,7 @@ export default async function TaskDetailPage({
               <div className="grid grid-cols-2 gap-2">
                 {(["pending", "in_progress", "in_review", "cancelled"] as const).map((status) => (
                   <form key={status} action={changeTaskStatus.bind(null, detail.id, status, detail.client_id, `/tasks/${detail.id}?toast=task_status_changed`)}>
-                    <Button className="w-full" type="submit" variant="outline" size="sm">{status}</Button>
+                    <Button className="w-full" type="submit" variant="outline" size="sm">{formatTaskStatus(status)}</Button>
                   </form>
                 ))}
               </div>

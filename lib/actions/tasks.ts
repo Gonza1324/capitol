@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { taskCommentSchema, taskSchema, type TaskCommentValues, type TaskFormValues, type TaskStatus } from "@/lib/validators/task";
+import { taskCommentSchema, taskPriorities, taskSchema, type TaskCommentValues, type TaskFormValues, type TaskPriority, type TaskStatus } from "@/lib/validators/task";
 import { assertInternalRole, getCurrentProfile, logActivity } from "./helpers";
 
 function taskColumns(values: TaskFormValues, userId: string) {
@@ -214,6 +214,34 @@ export async function changeTaskStatus(id: string, status: TaskStatus, clientId?
   const relatedClientId = clientId || (previous as { client_id?: string | null } | null)?.client_id || null;
   revalidateTaskPaths(id, relatedClientId);
   redirect(redirectTo || `/tasks/${id}?toast=${status === "completed" ? "task_completed" : "task_status_changed"}`);
+}
+
+export async function changeTaskPriority(id: string, priority: TaskPriority, clientId?: string | null, redirectTo?: string) {
+  if (!taskPriorities.includes(priority)) throw new Error("Prioridad invalida");
+  const { supabase, user, profile } = await getCurrentProfile();
+  assertInternalRole(profile?.role);
+
+  const { data: previous } = await supabase.from("tasks").select("client_id").eq("id", id).maybeSingle();
+  const { error } = await supabase
+    .from("tasks")
+    .update({ priority, updated_by: user.id })
+    .eq("id", id)
+    .is("deleted_at", null);
+
+  if (error) throw new Error(error.message);
+
+  await logActivity({
+    supabase,
+    actorId: user.id,
+    action: "task_updated",
+    entityType: "task",
+    entityId: id,
+    metadata: { priority }
+  });
+
+  const relatedClientId = clientId || (previous as { client_id?: string | null } | null)?.client_id || null;
+  revalidateTaskPaths(id, relatedClientId);
+  redirect(redirectTo || "/tasks?toast=task_updated");
 }
 
 export async function archiveTaskRecord(id: string, clientId?: string | null, redirectTo?: string) {
