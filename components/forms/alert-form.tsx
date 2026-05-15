@@ -88,7 +88,7 @@ export function AlertForm({
       </section>
       <Multi title="Clientes asociados" values={clientIds} options={clients} lockedId={lockedClientId} onChange={(next) => form.setValue("client_ids", next, { shouldDirty: true, shouldValidate: true })} />
       <Multi title="Rubros asociados" values={industryIds} options={industries} onChange={(next) => form.setValue("industry_ids", next, { shouldDirty: true, shouldValidate: true })} />
-      <Multi title="Intereses asociados" values={interestIds} options={interests} onChange={(next) => form.setValue("interest_ids", next, { shouldDirty: true, shouldValidate: true })} />
+      <Multi title="Issues asociados" values={interestIds} options={interests} onChange={(next) => form.setValue("interest_ids", next, { shouldDirty: true, shouldValidate: true })} />
       <section className="space-y-4">
         <h2 className="text-base font-semibold">Destinatarios</h2>
         <RecipientsField control={form.control} register={form.register} contacts={contacts} />

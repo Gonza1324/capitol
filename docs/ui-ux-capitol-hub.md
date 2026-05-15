@@ -212,7 +212,7 @@ Debe sentirse como ficha estrategica:
 - Resumen claro.
 - Estado visible.
 - Responsables.
-- Intereses y rubros.
+- Issues y rubros.
 - Ultima actividad.
 - Historial facil de recorrer.
 

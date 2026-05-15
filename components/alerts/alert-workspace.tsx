@@ -55,7 +55,7 @@ export function AlertWorkspace({ alerts, clients, profiles, industries, interest
       <FilterSelect label="Canal" value={filters.medium} options={["email", "whatsapp", "pdf", "other"]} onChange={(medium) => setFilters((f) => ({ ...f, medium }))} />
       <FilterSelect label="Cliente" value={filters.clientId} options={clients.map((c) => ({ label: c.name, value: c.id }))} onChange={(clientId) => setFilters((f) => ({ ...f, clientId }))} />
       <FilterSelect label="Rubro" value={filters.industryId} options={industries.map((i) => ({ label: i.name, value: i.id }))} onChange={(industryId) => setFilters((f) => ({ ...f, industryId }))} />
-      <FilterSelect label="Interes" value={filters.interestId} options={interests.map((i) => ({ label: i.name, value: i.id }))} onChange={(interestId) => setFilters((f) => ({ ...f, interestId }))} />
+      <FilterSelect label="Issue" value={filters.interestId} options={interests.map((i) => ({ label: i.name, value: i.id }))} onChange={(interestId) => setFilters((f) => ({ ...f, interestId }))} />
       <FilterSelect label="Responsable" value={filters.responsibleId} options={profiles.map((p) => ({ label: p.label, value: p.id }))} onChange={(responsibleId) => setFilters((f) => ({ ...f, responsibleId }))} />
       <Input type="date" value={filters.from} onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))} />
       <Input type="date" value={filters.to} onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))} />
@@ -74,7 +74,7 @@ function AlertTable({ alerts }: { alerts: AlertListRow[] }) {
     { header: "Canal", accessorKey: "medium" },
     { header: "Cliente/s", cell: ({ row }) => <BadgeList values={row.original.clients.map((c) => c.name)} empty="Sin cliente" /> },
     { header: "Rubros", cell: ({ row }) => <BadgeList values={row.original.industries.map((i) => i.name)} empty="-" /> },
-    { header: "Intereses", cell: ({ row }) => <BadgeList values={row.original.interests.map((i) => i.name)} empty="-" /> },
+    { header: "Issues", cell: ({ row }) => <BadgeList values={row.original.interests.map((i) => i.name)} empty="-" /> },
     { header: "Responsable", cell: ({ row }) => row.original.responsible_name || "-" },
     { header: "Envio", cell: ({ row }) => formatDate(row.original.sent_at) },
     { header: "Actualizado", cell: ({ row }) => formatDate(row.original.updated_at) },

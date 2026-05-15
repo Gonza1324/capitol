@@ -124,8 +124,8 @@ export default async function InteractionDetailPage({
               <Info label="Participantes internos"><BadgeGroup values={internalParticipants.map((item) => item.label)} /></Info>
               <Info label="Participantes externos"><LinkBadges values={externalParticipants} /></Info>
               <Info label="Creada por">{detail.created_by ? profileLabels.get(detail.created_by) || "-" : "-"}</Info>
-              <Info label="Google Meet">{detail.google_meet_url ? <a className="text-primary underline" href={detail.google_meet_url} target="_blank">Abrir Meet</a> : "-"}</Info>
-              <Info label="Calendar Event ID">{detail.google_calendar_event_id || "-"}</Info>
+              <Info label="Link de reunion">{detail.google_meet_url ? <a className="text-primary underline" href={detail.google_meet_url} target="_blank">Abrir link</a> : "-"}</Info>
+              <Info label="ID de evento externo">{detail.google_calendar_event_id || "-"}</Info>
               <Info label="Descripcion" wide>{detail.description || "-"}</Info>
               <Info label="Resumen" wide>{detail.summary || "-"}</Info>
               <Info label="Notas" wide>{detail.notes || "-"}</Info>

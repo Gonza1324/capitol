@@ -1,6 +1,6 @@
 # Capitol Hub
 
-Primera fase de Capitol Hub: base interna con Supabase, Auth, RLS, layout protegido y CRUD iniciales.
+Capitol Hub es la plataforma interna de Capitol para centralizar clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders, documentos, busqueda global e historial por cliente.
 
 ## Setup
 
@@ -20,12 +20,18 @@ Para conectar GitHub con Vercel y habilitar deploys automaticos desde `main` y P
 
 Para criterios visuales alineados con la identidad publica de Capitol, ver [docs/ui-ux-capitol-hub.md](./docs/ui-ux-capitol-hub.md).
 
+## Uso interno y go-live
+
+- Guia de uso interno: [docs/internal-user-guide.md](./docs/internal-user-guide.md)
+- Checklist de carga inicial: [docs/initial-data-entry-checklist.md](./docs/initial-data-entry-checklist.md)
+- Checklist de go-live: [docs/go-live-checklist.md](./docs/go-live-checklist.md)
+
 ## Alcance de esta fase
 
 - Auth con Supabase email/password.
 - Layout protegido para usuarios autenticados.
-- CRUD operativo de clientes, contactos y tareas.
-- Modulo avanzado inicial de clientes con rubros, intereses y responsables internos.
+- CRUD operativo de clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders y documentos.
+- Modulo de clientes con rubros, issues y responsables internos.
 - Administracion de usuarios desde Configuracion para usuarios `admin`.
 - Busqueda global sobre clientes, contactos, tareas, interacciones, reportes, alertas, stakeholders y documentos, con busquedas guardadas por usuario.
 - RLS por membresia de organizacion.
@@ -41,8 +47,8 @@ No incluye integraciones externas ni portal de clientes.
 
 - Listado filtrable de clientes con TanStack Table.
 - Formularios de clientes/contactos con React Hook Form y Zod.
-- Detalle de cliente con resumen, contactos, rubros, intereses y responsables.
-- Configuracion minima de rubros e intereses.
+- Detalle de cliente con resumen, contactos, rubros, issues y responsables.
+- Configuracion minima de rubros e issues.
 - Activity log para cambios importantes.
 
 ## Fase 3

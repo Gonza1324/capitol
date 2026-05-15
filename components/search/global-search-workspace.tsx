@@ -78,7 +78,7 @@ export function GlobalSearchWorkspace({ data }: { data: SearchData }) {
             <FilterSelect name="urgency" label="Urgencia" value={filters.urgency} options={["low", "medium", "high", "critical"]} />
             <FilterSelect name="category" label="Categoria" value={filters.category} options={["legislative", "executive", "judicial", "regulatory", "media", "provincial", "municipal", "international", "other"]} />
             <FilterSelect name="industryId" label="Rubro" value={filters.industryId} options={data.options.industries} />
-            <FilterSelect name="interestId" label="Interes" value={filters.interestId} options={data.options.interests} />
+            <FilterSelect name="interestId" label="Issue" value={filters.interestId} options={data.options.interests} />
             <input type="hidden" name="entity" value={filters.entity} />
             <div className="flex flex-wrap gap-2 md:col-span-3 xl:col-span-6">
               <Button type="submit"><Search className="h-4 w-4" /> Buscar</Button>

@@ -92,10 +92,10 @@ export function InteractionForm({
         <Field label="Hora de fin" error={form.formState.errors.end_time?.message}>
           <Input type="time" {...form.register("end_time")} />
         </Field>
-        <Field label="Google Meet URL" error={form.formState.errors.google_meet_url?.message}>
+        <Field label="Link de reunion" error={form.formState.errors.google_meet_url?.message}>
           <Input placeholder="https://..." {...form.register("google_meet_url")} />
         </Field>
-        <Field label="Google Calendar Event ID">
+        <Field label="ID de evento externo">
           <Input {...form.register("google_calendar_event_id")} />
         </Field>
         <Field label="Descripcion" wide>

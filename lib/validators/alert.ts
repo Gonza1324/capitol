@@ -32,7 +32,7 @@ export const alertSchema = z.object({
   message: "No se pueden repetir rubros",
   path: ["industry_ids"]
 }).refine((value) => new Set(value.interest_ids).size === value.interest_ids.length, {
-  message: "No se pueden repetir intereses",
+  message: "No se pueden repetir issues",
   path: ["interest_ids"]
 }).refine((value) => {
   const emails = value.recipients.map((recipient) => recipient.email).filter(Boolean);

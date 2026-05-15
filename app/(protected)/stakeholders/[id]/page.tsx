@@ -181,7 +181,7 @@ export default async function StakeholderDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>Temas / intereses</CardTitle>
+              <CardTitle>Temas / issues</CardTitle>
               <CardDescription>Taxonomia liviana para busqueda y segmentacion.</CardDescription>
             </CardHeader>
             <CardContent>
