@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { archiveTaskRecord, changeTaskPriority, changeTaskStatus } from "@/lib/actions/tasks";
 import { taskPriorities, taskStatuses, type TaskPriority, type TaskStatus } from "@/lib/validators/task";
-import { formatTaskStatus, isOverdue, TaskPriorityBadge, TaskStatusBadge } from "./task-badges";
+import { formatTaskPriority, formatTaskStatus, isOverdue, TaskPriorityBadge, TaskStatusBadge } from "./task-badges";
 
 export type TaskListRow = {
   id: string;
@@ -84,7 +84,7 @@ export function TaskWorkspace({
       <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3 lg:grid-cols-7">
         <Input className="md:col-span-3 lg:col-span-2" placeholder="Buscar por titulo, descripcion, cliente..." value={search} onChange={(event) => setSearch(event.target.value)} />
         <FilterSelect label="Estado" value={filters.status} options={taskStatuses.map((status) => ({ label: formatTaskStatus(status), value: status }))} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
-        <FilterSelect label="Prioridad" value={filters.priority} options={["low", "medium", "high", "urgent"]} onChange={(value) => setFilters((current) => ({ ...current, priority: value }))} />
+        <FilterSelect label="Prioridad" value={filters.priority} options={taskPriorities.map((priority) => ({ label: formatTaskPriority(priority), value: priority }))} onChange={(value) => setFilters((current) => ({ ...current, priority: value }))} />
         <FilterSelect label="Cliente" value={filters.clientId} options={clients.map((client) => ({ label: client.name, value: client.id }))} onChange={(value) => setFilters((current) => ({ ...current, clientId: value }))} />
         <FilterSelect label="Responsable" value={filters.assigneeId} options={profiles.map((profile) => ({ label: profile.label, value: profile.id }))} onChange={(value) => setFilters((current) => ({ ...current, assigneeId: value }))} />
         <Input type="date" value={filters.date} onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))} />
@@ -252,7 +252,7 @@ function TaskStatusSelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className="h-9 min-w-36 rounded-md border bg-background px-2 text-xs"
+      className={`h-9 min-w-36 rounded-md border px-2 text-xs font-medium ${taskStatusSelectClass(task.status)}`}
       value={task.status}
       disabled={isPending}
       aria-label={`Cambiar estado de ${task.title}`}
@@ -265,11 +265,22 @@ function TaskStatusSelect({ task }: { task: TaskListRow }) {
   );
 }
 
+function taskStatusSelectClass(status: string) {
+  const classes: Record<string, string> = {
+    pending: "border-border bg-muted text-muted-foreground",
+    in_progress: "border-info/25 bg-info-muted text-info",
+    in_review: "border-warning/25 bg-warning-muted text-warning",
+    completed: "border-success/25 bg-success-muted text-success",
+    cancelled: "border-danger/25 bg-danger-muted text-danger"
+  };
+  return classes[status] || "border-border bg-background text-foreground";
+}
+
 function TaskPrioritySelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className="h-9 min-w-28 rounded-md border bg-background px-2 text-xs"
+      className={`h-9 min-w-28 rounded-md border px-2 text-xs font-medium ${taskPrioritySelectClass(task.priority)}`}
       value={task.priority}
       disabled={isPending}
       aria-label={`Cambiar prioridad de ${task.title}`}
@@ -277,9 +288,19 @@ function TaskPrioritySelect({ task }: { task: TaskListRow }) {
         await changeTaskPriority(task.id, event.target.value as TaskPriority, task.client_id, "/tasks?toast=task_updated");
       })}
     >
-      {taskPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}
+      {taskPriorities.map((priority) => <option key={priority} value={priority}>{formatTaskPriority(priority)}</option>)}
     </select>
   );
+}
+
+function taskPrioritySelectClass(priority: string) {
+  const classes: Record<string, string> = {
+    low: "border-border bg-muted text-muted-foreground",
+    medium: "border-info/25 bg-info-muted text-info",
+    high: "border-warning/25 bg-warning-muted text-warning",
+    urgent: "border-danger/25 bg-danger-muted text-danger"
+  };
+  return classes[priority] || "border-border bg-background text-foreground";
 }
 
 function TaskKanban({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage: string }) {

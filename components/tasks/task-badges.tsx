@@ -12,6 +12,17 @@ export function formatTaskStatus(status: string) {
   return taskStatusLabels[status] || status;
 }
 
+export const taskPriorityLabels: Record<string, string> = {
+  low: "Baja",
+  medium: "Media",
+  high: "Alta",
+  urgent: "Urgente"
+};
+
+export function formatTaskPriority(priority: string) {
+  return taskPriorityLabels[priority] || priority;
+}
+
 export function TaskStatusBadge({ status }: { status: string }) {
   const variant = status === "completed" ? "success" : status === "cancelled" ? "warning" : "secondary";
   return <Badge variant={variant}>{formatTaskStatus(status)}</Badge>;
@@ -19,7 +30,7 @@ export function TaskStatusBadge({ status }: { status: string }) {
 
 export function TaskPriorityBadge({ priority }: { priority: string }) {
   const variant = priority === "urgent" ? "danger" : priority === "high" ? "warning" : "muted";
-  return <Badge variant={variant}>{priority}</Badge>;
+  return <Badge variant={variant}>{formatTaskPriority(priority)}</Badge>;
 }
 
 export function isOverdue(dueDate: string | null, status: string) {

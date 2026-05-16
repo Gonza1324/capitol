@@ -197,10 +197,13 @@ export default async function InternalCalendarPage({
                 const key = day.toISOString().slice(0, 10);
                 const dayItems = filteredItems.filter((item) => dateKey(item.date) === key);
                 const isSelected = key === selectedDay;
+                const isToday = key === today;
                 return (
-                  <Link key={key} href={`/internal-calendar?month=${monthStart.toISOString().slice(0, 7)}&day=${key}`} className={`min-h-28 border-b border-r p-2 hover:bg-accent ${isSelected ? "bg-secondary" : ""}`}>
+                  <Link key={key} href={`/internal-calendar?month=${monthStart.toISOString().slice(0, 7)}&day=${key}`} className={`min-h-28 border-b border-r p-2 hover:bg-accent ${isSelected ? "bg-secondary" : ""} ${isToday ? "bg-capitol-accent-muted/40" : ""}`}>
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-medium text-foreground">{day.getDate()}</span>
+                      <span className={isToday ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-danger font-semibold text-white shadow-sm" : "font-medium text-foreground"}>
+                        {day.getDate()}
+                      </span>
                       {dayItems.length ? <Badge variant="muted">{dayItems.length}</Badge> : null}
                     </div>
                     <div className="space-y-1">

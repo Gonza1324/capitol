@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { formatTaskStatus } from "@/components/tasks/task-badges";
+import { formatTaskPriority, formatTaskStatus } from "@/components/tasks/task-badges";
 import { recurrenceRules, taskPriorities, taskSchema, taskStatuses, type TaskFormValues } from "@/lib/validators/task";
 
 type ClientOption = { id: string; name: string };
@@ -174,7 +174,11 @@ function SelectField({
       <Label>{label}</Label>
       <select {...props} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
         <option value="" disabled>Seleccionar</option>
-        {options.map((option) => <option key={option} value={option}>{label === "Estado" ? formatTaskStatus(option) : option}</option>)}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {label === "Estado" ? formatTaskStatus(option) : label === "Prioridad" ? formatTaskPriority(option) : option}
+          </option>
+        ))}
       </select>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
