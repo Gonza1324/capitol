@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Eye, Pencil } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Cloud, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { archiveClientRecord } from "@/lib/actions/clients";
@@ -20,6 +20,7 @@ export type ClientListRow = {
   tax_id: string | null;
   status: string;
   client_type: string;
+  drive_url: string | null;
   start_date: string | null;
   updated_at: string;
   industries: { id: string; name: string }[];
@@ -59,7 +60,6 @@ export function ClientTable({
         accessorKey: "status",
         cell: ({ row }) => <Badge variant={row.original.status === "active" ? "success" : "secondary"}>{row.original.status}</Badge>
       },
-      { header: "Tipo", accessorKey: "client_type" },
       {
         id: "industries",
         header: () => (
@@ -92,6 +92,11 @@ export function ClientTable({
             <Button asChild variant="outline" size="sm">
               <Link href={`/clients/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link>
             </Button>
+            {row.original.drive_url ? (
+              <Button asChild variant="outline" size="icon" title="Abrir Drive" aria-label="Abrir Drive">
+                <a href={row.original.drive_url} target="_blank" rel="noreferrer"><Cloud className="h-4 w-4" /></a>
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"

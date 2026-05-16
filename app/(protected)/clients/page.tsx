@@ -13,6 +13,7 @@ type RawClient = {
   tax_id: string | null;
   status: string;
   client_type: string;
+  drive_url: string | null;
   start_date: string | null;
   updated_at: string;
   client_industries?: Array<{ industries: { id: string; name: string } | Array<{ id: string; name: string }> | null }>;
@@ -36,6 +37,7 @@ export default async function ClientsPage({
       tax_id,
       status,
       client_type,
+      drive_url,
       start_date,
       updated_at,
       client_industries(industries(id, name)),
@@ -52,6 +54,7 @@ export default async function ClientsPage({
     tax_id: client.tax_id,
     status: client.status,
     client_type: client.client_type,
+    drive_url: client.drive_url,
     start_date: client.start_date,
     updated_at: client.updated_at,
     industries: (client.client_industries || []).flatMap((item) => {
