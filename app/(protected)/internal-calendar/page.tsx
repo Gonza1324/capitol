@@ -201,7 +201,7 @@ export default async function InternalCalendarPage({
                 return (
                   <Link key={key} href={`/internal-calendar?month=${monthStart.toISOString().slice(0, 7)}&day=${key}`} className={`min-h-28 border-b border-r p-2 hover:bg-accent ${isSelected ? "bg-secondary" : ""} ${isToday ? "bg-capitol-accent-muted/40" : ""}`}>
                     <div className="mb-2 flex items-center justify-between">
-                      <span className={isToday ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-danger font-semibold text-white shadow-sm" : "font-medium text-foreground"}>
+                      <span className={isToday ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground shadow-sm" : "font-medium text-foreground"}>
                         {day.getDate()}
                       </span>
                       {dayItems.length ? <Badge variant="muted">{dayItems.length}</Badge> : null}

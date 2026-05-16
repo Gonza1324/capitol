@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Eye, Pencil } from "lucide-react";
+import { Archive, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +64,7 @@ function StakeholderTable({ stakeholders }: { stakeholders: StakeholderListRow[]
     { header: "Clientes", cell: ({ row }) => <BadgeList values={row.original.clients.map((c) => c.name)} empty="-" /> },
     { header: "Estado", cell: ({ row }) => <Badge variant={row.original.is_active ? "success" : "muted"}>{row.original.is_active ? "activo" : "inactivo"}</Badge> },
     { header: "Actualizado", cell: ({ row }) => formatDate(row.original.updated_at) },
-    { header: "Acciones", cell: ({ row }) => <div className="flex gap-2"><Button asChild size="sm" variant="outline"><Link href={`/stakeholders/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/stakeholders/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/interactions/new?stakeholderId=${row.original.id}`}>Interaccion</Link></Button><Button size="sm" variant="ghost" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.full_name}?`)) return; startTransition(async () => archiveStakeholderRecord(row.original.id, row.original.clients.map((c) => c.id), "/stakeholders?toast=stakeholder_archived")); }}>Archivar</Button></div> }
+    { header: "Acciones", cell: ({ row }) => <div className="flex gap-2"><Button asChild size="sm" variant="outline"><Link href={`/stakeholders/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/stakeholders/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/interactions/new?stakeholderId=${row.original.id}`}>Interaccion</Link></Button><Button size="icon" variant="outline" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.full_name}?`)) return; startTransition(async () => archiveStakeholderRecord(row.original.id, row.original.clients.map((c) => c.id), "/stakeholders?toast=stakeholder_archived")); }}><Archive className="h-4 w-4" /></Button></div> }
   ], [isPending]);
   const table = useReactTable({ data: stakeholders, columns, getCoreRowModel: getCoreRowModel() });
   if (!stakeholders.length) return <EmptyState message="Sin resultados por filtros" />;

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Eye, Pencil, SquareCheckBig } from "lucide-react";
+import { Archive, Eye, Pencil, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -130,12 +130,12 @@ function InteractionTable({ interactions, emptyMessage }: { interactions: Intera
             <Button asChild variant="outline" size="sm"><Link href={`/interactions/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
             <Button asChild variant="outline" size="sm"><Link href={`/interactions/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
             <Button asChild variant="outline" size="sm"><Link href={`/tasks/new?originType=interaction&originId=${row.original.id}&clientId=${row.original.clients[0]?.id || ""}`}><SquareCheckBig className="h-4 w-4" /></Link></Button>
-            <Button variant="ghost" size="sm" disabled={isPending} onClick={() => {
+            <Button variant="outline" size="icon" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => {
               if (!window.confirm(`Archivar ${row.original.title}?`)) return;
               startTransition(async () => {
                 await archiveInteractionRecord(row.original.id, row.original.clients.map((client) => client.id), "/interactions?toast=interaction_archived");
               });
-            }}>Archivar</Button>
+            }}><Archive className="h-4 w-4" /></Button>
           </div>
         )
       }

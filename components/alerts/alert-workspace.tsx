@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Eye, Pencil, SquareCheckBig } from "lucide-react";
+import { Archive, Eye, Pencil, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +78,7 @@ function AlertTable({ alerts }: { alerts: AlertListRow[] }) {
     { header: "Responsable", cell: ({ row }) => row.original.responsible_name || "-" },
     { header: "Envio", cell: ({ row }) => formatDate(row.original.sent_at) },
     { header: "Actualizado", cell: ({ row }) => formatDate(row.original.updated_at) },
-    { header: "Acciones", cell: ({ row }) => <div className="flex gap-2"><Button asChild size="sm" variant="outline"><Link href={`/alerts/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/alerts/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/tasks/new?originType=alert&originId=${row.original.id}&clientId=${row.original.clients[0]?.id || ""}`}><SquareCheckBig className="h-4 w-4" /></Link></Button><Button size="sm" variant="ghost" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.title}?`)) return; startTransition(async () => archiveAlertRecord(row.original.id, row.original.clients.map((c) => c.id), "/alerts?toast=alert_archived")); }}>Archivar</Button></div> }
+    { header: "Acciones", cell: ({ row }) => <div className="flex gap-2"><Button asChild size="sm" variant="outline"><Link href={`/alerts/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/alerts/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button><Button asChild size="sm" variant="outline"><Link href={`/tasks/new?originType=alert&originId=${row.original.id}&clientId=${row.original.clients[0]?.id || ""}`}><SquareCheckBig className="h-4 w-4" /></Link></Button><Button size="icon" variant="outline" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.title}?`)) return; startTransition(async () => archiveAlertRecord(row.original.id, row.original.clients.map((c) => c.id), "/alerts?toast=alert_archived")); }}><Archive className="h-4 w-4" /></Button></div> }
   ], [isPending]);
   const table = useReactTable({ data: alerts, columns, getCoreRowModel: getCoreRowModel() });
   if (!alerts.length) return <EmptyState message="Sin resultados por filtros" />;

@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye, Pencil } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { archiveClientRecord } from "@/lib/actions/clients";
@@ -94,8 +94,10 @@ export function ClientTable({
             </Button>
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon"
+              title="Archivar"
+              aria-label="Archivar"
               disabled={isPending}
               onClick={() => {
                 if (!window.confirm(`Archivar ${row.original.name}?`)) return;
@@ -104,7 +106,7 @@ export function ClientTable({
                 });
               }}
             >
-              Archivar
+              <Archive className="h-4 w-4" />
             </Button>
           </div>
         )

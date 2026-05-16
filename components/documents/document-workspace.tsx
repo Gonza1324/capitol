@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { ExternalLink, Eye, Pencil } from "lucide-react";
+import { Archive, ExternalLink, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -82,15 +82,17 @@ function DocumentTable({ documents }: { documents: DocumentListRow[] }) {
         {row.original.source_type === "upload" && row.original.external_url ? <Button asChild size="sm" variant="outline"><a href={row.original.external_url} target="_blank">Link</a></Button> : null}
         <Button asChild size="sm" variant="outline"><Link href={`/documents/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
         <Button
-          size="sm"
-          variant="ghost"
+          size="icon"
+          variant="outline"
+          title="Archivar"
+          aria-label="Archivar"
           disabled={isPending}
           onClick={() => {
             if (!window.confirm(`Archivar ${row.original.name}?`)) return;
             startTransition(async () => archiveDocumentRecord(row.original.id, row.original.entity_type, row.original.entity_id, "/documents?toast=document_archived"));
           }}
         >
-          Archivar
+          <Archive className="h-4 w-4" />
         </Button>
       </div>
     ) }

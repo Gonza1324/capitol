@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Eye, Pencil, SquareCheckBig } from "lucide-react";
+import { Archive, Eye, Pencil, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +90,7 @@ function ReportTable({ reports }: { reports: ReportListRow[] }) {
       <Button size="sm" variant="outline" disabled={isPending} onClick={() => startTransition(async () => changeReportStatus(row.original.id, "sent", row.original.clients.map((c) => c.id), "/reports?toast=report_sent"))}>Enviado</Button>
       <Button size="sm" variant="outline" disabled={isPending} onClick={() => startTransition(async () => changeReportStatus(row.original.id, "approved", row.original.clients.map((c) => c.id), "/reports?toast=report_approved"))}>Aprobar</Button>
       <Button asChild size="sm" variant="outline"><Link href={`/tasks/new?originType=report&originId=${row.original.id}&clientId=${row.original.clients[0]?.id || ""}`}><SquareCheckBig className="h-4 w-4" /></Link></Button>
-      <Button size="sm" variant="ghost" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.title}?`)) return; startTransition(async () => archiveReportRecord(row.original.id, row.original.clients.map((c) => c.id), "/reports?toast=report_archived")); }}>Archivar</Button>
+      <Button size="icon" variant="outline" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => { if (!window.confirm(`Archivar ${row.original.title}?`)) return; startTransition(async () => archiveReportRecord(row.original.id, row.original.clients.map((c) => c.id), "/reports?toast=report_archived")); }}><Archive className="h-4 w-4" /></Button>
     </div> }
   ], [isPending]);
   const table = useReactTable({ data: reports, columns, getCoreRowModel: getCoreRowModel() });
