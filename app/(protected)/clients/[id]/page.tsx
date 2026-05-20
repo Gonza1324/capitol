@@ -16,7 +16,6 @@ import { ReportStatusBadge, ReportTypeBadge } from "@/components/reports/report-
 import { AlertCategoryBadge, AlertUrgencyBadge } from "@/components/alerts/alert-badges";
 import { InfluenceBadge, SensitivityBadge, StakeholderTypeBadge, StanceBadge } from "@/components/stakeholders/stakeholder-badges";
 import { EntityDocuments } from "@/components/documents/entity-documents";
-import { ClientHistoryTimeline } from "@/components/clients/client-history-timeline";
 import { PrintReportButton } from "@/components/clients/print-report-button";
 import { formatCalendarEventDate } from "@/components/calendar/calendar-event-card";
 import { getClientHistory } from "@/lib/data/client-history";
@@ -247,7 +246,7 @@ export default async function ClientDetailPage({
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {["Tareas", "Calls", "Historial", "Contactos", "Calendario", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
+        {["Tareas", "Calls", "Contactos", "Calendario", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
           <Badge key={tab} variant={tab === "Tareas" ? "secondary" : "outline"}>{tab}</Badge>
         ))}
       </div>
@@ -257,7 +256,6 @@ export default async function ClientDetailPage({
           <ClientTasksSection clientId={detail.id} tasks={taskRows} />
           <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
           <WorkedOnSection events={history} />
-          <ClientHistoryTimeline events={history} />
 
           <Card>
             <CardHeader>

@@ -43,7 +43,7 @@ type Filters = {
 };
 
 type SortConfig = {
-  key: "due_date" | "priority";
+  key: "client" | "due_date" | "priority";
   direction: "asc" | "desc";
 } | null;
 
@@ -121,7 +121,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
   const [sort, setSort] = useState<SortConfig>(null);
   const sortedTasks = useMemo(() => sortTasks(tasks, sort), [sort, tasks]);
 
-  const toggleSort = useCallback((key: "due_date" | "priority") => {
+  const toggleSort = useCallback((key: "client" | "due_date" | "priority") => {
     setSort((current) => {
       if (current?.key === key) return { key, direction: current.direction === "asc" ? "desc" : "asc" };
       return { key, direction: key === "priority" ? "desc" : "asc" };
@@ -135,7 +135,6 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         cell: ({ row }) => (
           <div className="min-w-[32rem] max-w-3xl">
             <Link href={`/tasks/${row.original.id}`} className="font-medium hover:underline">{row.original.title}</Link>
-            <p className="mt-1 text-xs text-muted-foreground">{row.original.client_name || "Sin cliente"}</p>
             <RecurrenceBadges task={row.original} />
             {isOverdue(row.original.due_date, row.original.status) ? <p className="mt-1 text-xs text-destructive">Vencida</p> : null}
           </div>
@@ -147,7 +146,15 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         header: () => <SortableHeader label="Prioridad" active={sort?.key === "priority"} direction={sort?.direction} onClick={() => toggleSort("priority")} />,
         cell: ({ row }) => <TaskPrioritySelect task={row.original} />
       },
-      { header: "Responsables", cell: ({ row }) => <BadgeList values={row.original.assignees.map((item) => item.label)} empty="Sin responsable" /> },
+      {
+        id: "client",
+        header: () => <SortableHeader label="Cliente" active={sort?.key === "client"} direction={sort?.direction} onClick={() => toggleSort("client")} />,
+        cell: ({ row }) => (
+          <div className="min-w-32 max-w-48 text-sm">
+            {row.original.client_name ? row.original.client_name : <span className="text-muted-foreground">Sin cliente</span>}
+          </div>
+        )
+      },
       {
         id: "due_date",
         header: () => <SortableHeader label="Fecha limite" active={sort?.key === "due_date"} direction={sort?.direction} onClick={() => toggleSort("due_date")} />,
@@ -225,6 +232,15 @@ function sortTasks(tasks: TaskListRow[], sort: SortConfig) {
   if (!sort) return tasks;
   const direction = sort.direction === "asc" ? 1 : -1;
   return [...tasks].sort((a, b) => {
+    if (sort.key === "client") {
+      if (!a.client_name && !b.client_name) return a.title.localeCompare(b.title, "es", { sensitivity: "base" });
+      if (!a.client_name) return 1;
+      if (!b.client_name) return -1;
+      const clientDiff = a.client_name.localeCompare(b.client_name, "es", { sensitivity: "base" });
+      if (clientDiff) return clientDiff * direction;
+      return a.title.localeCompare(b.title, "es", { sensitivity: "base" });
+    }
+
     if (sort.key === "priority") {
       const priorityDiff = priorityRank(a.priority) - priorityRank(b.priority);
       if (priorityDiff) return priorityDiff * direction;
@@ -255,7 +271,7 @@ function TaskStatusSelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className={`h-9 min-w-36 rounded-md border px-2 text-xs font-medium ${taskStatusSelectClass(task.status)}`}
+      className={`h-8 w-32 rounded-md border px-2 text-xs font-medium ${taskStatusSelectClass(task.status)}`}
       value={task.status}
       disabled={isPending}
       aria-label={`Cambiar estado de ${task.title}`}
@@ -283,7 +299,7 @@ function TaskPrioritySelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className={`h-9 min-w-28 rounded-md border px-2 text-xs font-medium ${taskPrioritySelectClass(task.priority)}`}
+      className={`h-8 w-24 rounded-md border px-2 text-xs font-medium ${taskPrioritySelectClass(task.priority)}`}
       value={task.priority}
       disabled={isPending}
       aria-label={`Cambiar prioridad de ${task.title}`}
