@@ -16,7 +16,6 @@ import { ReportStatusBadge, ReportTypeBadge } from "@/components/reports/report-
 import { AlertCategoryBadge, AlertUrgencyBadge } from "@/components/alerts/alert-badges";
 import { InfluenceBadge, SensitivityBadge, StakeholderTypeBadge, StanceBadge } from "@/components/stakeholders/stakeholder-badges";
 import { EntityDocuments } from "@/components/documents/entity-documents";
-import { PrintReportButton } from "@/components/clients/print-report-button";
 import { formatCalendarEventDate } from "@/components/calendar/calendar-event-card";
 import { getClientHistory } from "@/lib/data/client-history";
 
@@ -242,14 +241,8 @@ export default async function ClientDetailPage({
       <PageHeader
         title={detail.name}
         description="Ficha operativa de cliente"
-        actions={<><PrintReportButton /><Button asChild><Link href={`/clients/${detail.id}/edit`}>Editar cliente</Link></Button></>}
+        actions={<Button asChild><Link href={`/clients/${detail.id}/edit`}>Editar cliente</Link></Button>}
       />
-
-      <div className="mb-6 flex flex-wrap gap-2">
-        {["Tareas", "Calls", "Contactos", "Calendario", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
-          <Badge key={tab} variant={tab === "Tareas" ? "secondary" : "outline"}>{tab}</Badge>
-        ))}
-      </div>
 
       <div className="grid gap-6">
         <div className="space-y-6">
