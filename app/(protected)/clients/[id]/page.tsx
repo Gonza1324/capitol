@@ -242,7 +242,7 @@ export default async function ClientDetailPage({
       </div>
       <PageHeader
         title={detail.name}
-        description={detail.legal_name || "Ficha operativa de cliente"}
+        description="Ficha operativa de cliente"
         actions={<><PrintReportButton /><Button asChild><Link href={`/clients/${detail.id}/edit`}>Editar cliente</Link></Button></>}
       />
 

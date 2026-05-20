@@ -74,7 +74,7 @@ async function getResults(supabase: Awaited<ReturnType<typeof createClient>>, fi
 async function searchClients(supabase: Awaited<ReturnType<typeof createClient>>): Promise<SearchResult[]> {
   const { data } = await supabase
     .from("clients")
-    .select("id, name, legal_name, tax_id, status, client_type, description, strategic_profile, website, drive_url, general_notes, updated_at, created_by, updated_by, client_industries(industry_id, industries(name)), client_interests(interest_id, priority, interests(name))")
+    .select("id, name, status, drive_url, updated_at, created_by, updated_by, client_industries(industry_id, industries(name)), client_interests(interest_id, priority, interests(name))")
     .is("deleted_at", null)
     .order("updated_at", { ascending: false })
     .limit(300);
@@ -86,17 +86,17 @@ async function searchClients(supabase: Awaited<ReturnType<typeof createClient>>)
       id: item.id,
       entity: "client",
       title: item.name,
-      subtitle: [item.legal_name, item.tax_id].filter(Boolean).join(" · "),
-      description: item.description || item.strategic_profile || item.general_notes,
+      subtitle: "",
+      description: item.drive_url,
       href: `/clients/${item.id}`,
       date: item.updated_at,
-      badges: [item.status, item.client_type, ...industries.slice(0, 2), ...interests.slice(0, 2)].filter(Boolean),
+      badges: [item.status, ...industries.slice(0, 2), ...interests.slice(0, 2)].filter(Boolean),
       clientIds: [item.id],
       userIds: [item.created_by, item.updated_by].filter(Boolean),
       status: item.status,
       industryIds: (item.client_industries || []).map((row: any) => row.industry_id).filter(Boolean),
       interestIds: (item.client_interests || []).map((row: any) => row.interest_id).filter(Boolean),
-      searchableText: searchable([item.name, item.legal_name, item.tax_id, item.description, item.strategic_profile, item.general_notes, item.website, item.drive_url, industries, interests])
+      searchableText: searchable([item.name, item.drive_url, industries, interests])
     };
   });
 }

@@ -16,12 +16,8 @@ import { archiveClientRecord } from "@/lib/actions/clients";
 export type ClientListRow = {
   id: string;
   name: string;
-  legal_name: string | null;
-  tax_id: string | null;
   status: string;
-  client_type: string;
   drive_url: string | null;
-  start_date: string | null;
   updated_at: string;
   industries: { id: string; name: string }[];
   interests: { id: string; name: string; priority: string }[];
@@ -51,7 +47,6 @@ export function ClientTable({
             <Link href={`/clients/${row.original.id}`} className="font-medium hover:underline">
               {row.original.name}
             </Link>
-            <p className="text-xs text-muted-foreground">{row.original.legal_name || row.original.tax_id || "Sin razon social"}</p>
           </div>
         )
       },

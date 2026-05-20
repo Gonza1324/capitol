@@ -7,7 +7,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { clientSchema, type ClientFormValues } from "@/lib/validators/client";
 
@@ -16,7 +15,6 @@ export type CatalogOption = { id: string; name: string };
 export type ProfileOption = { id: string; label: string };
 
 const statuses = ["active", "prospect", "paused", "former", "potential", "archived"] as const;
-const types = ["company", "chamber", "ngo", "person", "public_agency", "embassy", "association", "other"] as const;
 const confidentiality = ["standard", "confidential", "restricted"] as const;
 const priorities = ["high", "medium", "low"] as const;
 
@@ -82,38 +80,10 @@ export function ClientForm({
         <Field label="Nombre" error={form.formState.errors.name?.message}>
           <Input {...form.register("name")} />
         </Field>
-        <Field label="Razon social">
-          <Input {...form.register("legal_name")} />
-        </Field>
-        <Field label="CUIT / ID fiscal">
-          <Input {...form.register("tax_id")} />
-        </Field>
         <SelectField label="Estado" {...form.register("status")} options={statuses} />
-        <SelectField label="Tipo de cliente" {...form.register("client_type")} options={types} />
         <SelectField label="Confidencialidad" {...form.register("confidentiality_level")} options={confidentiality} />
-        <Field label="Fecha de inicio">
-          <Input type="date" {...form.register("start_date")} />
-        </Field>
-        <Field label="Fecha de finalizacion" error={form.formState.errors.end_date?.message}>
-          <Input type="date" {...form.register("end_date")} />
-        </Field>
-        <Field label="Website" error={form.formState.errors.website?.message}>
-          <Input placeholder="https://..." {...form.register("website")} />
-        </Field>
         <Field label="Link a Drive" error={form.formState.errors.drive_url?.message}>
           <Input placeholder="https://..." {...form.register("drive_url")} />
-        </Field>
-      </Section>
-
-      <Section title="Estrategia y notas">
-        <Field label="Descripcion" wide>
-          <Textarea {...form.register("description")} />
-        </Field>
-        <Field label="Perfil estrategico" wide>
-          <Textarea {...form.register("strategic_profile")} />
-        </Field>
-        <Field label="Notas generales" wide>
-          <Textarea {...form.register("general_notes")} />
         </Field>
       </Section>
 
