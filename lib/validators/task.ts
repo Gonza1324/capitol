@@ -19,6 +19,11 @@ const optionalDate = z
   .nullable()
   .transform((value) => value || null);
 
+const optionalPositiveInt = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? null : value),
+  z.coerce.number().int().min(1, "Cantidad invalida").max(200, "Cantidad demasiado alta").nullable()
+);
+
 export const taskStatuses = ["pending", "in_progress", "in_review", "completed", "cancelled"] as const;
 export const taskPriorities = ["low", "medium", "high", "urgent"] as const;
 export const recurrenceRules = ["daily", "weekly", "monthly", "custom"] as const;
@@ -36,6 +41,9 @@ export const taskSchema = z
     origin_id: optionalUuid,
     is_recurring: z.boolean().default(false),
     recurrence_rule: z.enum(recurrenceRules).optional().nullable(),
+    recurrence_interval: z.coerce.number().int().min(1, "Intervalo invalido").max(365, "Intervalo demasiado alto").default(1),
+    recurrence_ends_at: optionalDate,
+    recurrence_count: optionalPositiveInt,
     initial_comment: optionalText
   })
   .refine((value) => !value.is_recurring || Boolean(value.recurrence_rule), {
@@ -45,6 +53,10 @@ export const taskSchema = z
   .refine((value) => new Set(value.assignee_ids).size === value.assignee_ids.length, {
     message: "No se pueden repetir responsables",
     path: ["assignee_ids"]
+  })
+  .refine((value) => !value.is_recurring || Boolean(value.due_date), {
+    message: "Agregar fecha limite para generar recurrencias",
+    path: ["due_date"]
   });
 
 export const taskCommentSchema = z.object({

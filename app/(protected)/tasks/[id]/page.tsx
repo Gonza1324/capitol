@@ -9,7 +9,7 @@ import { ToastMessage } from "@/components/feedback/toast-message";
 import { ConfirmAction } from "@/components/feedback/confirm-action";
 import { TaskCommentForm } from "@/components/tasks/task-comment-form";
 import { formatTaskStatus, isOverdue, TaskPriorityBadge, TaskStatusBadge } from "@/components/tasks/task-badges";
-import { archiveTaskRecord, changeTaskStatus, createTaskComment } from "@/lib/actions/tasks";
+import { archiveTaskRecord, changeTaskStatus, createTaskComment, generateTaskOccurrences } from "@/lib/actions/tasks";
 import { firstRelation } from "@/lib/data/tasks";
 import { createClient } from "@/lib/supabase/server";
 import { EntityDocuments } from "@/components/documents/entity-documents";
@@ -27,6 +27,12 @@ type TaskDetail = {
   origin_id: string | null;
   is_recurring: boolean;
   recurrence_rule: string | null;
+  recurrence_interval: number | null;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+  parent_recurring_id: string | null;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -42,6 +48,15 @@ type CommentRow = {
   body: string;
   created_at: string;
   profiles?: { full_name: string | null; email: string | null } | Array<{ full_name: string | null; email: string | null }> | null;
+};
+
+type SeriesTaskRow = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  generated_from_recurring_id: string | null;
 };
 
 export default async function TaskDetailPage({
@@ -64,6 +79,13 @@ export default async function TaskDetailPage({
   if (!task) notFound();
 
   const detail = task as unknown as TaskDetail;
+  const seriesRootId = detail.generated_from_recurring_id || detail.id;
+  const { data: seriesRows } = await supabase
+    .from("tasks")
+    .select("id, title, status, priority, due_date, generated_from_recurring_id")
+    .or(`id.eq.${seriesRootId},generated_from_recurring_id.eq.${seriesRootId}`)
+    .is("deleted_at", null)
+    .order("due_date", { ascending: true });
   const client = firstRelation(detail.clients);
   const profileLabels = new Map(((profiles || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => [profile.id, profile.full_name || profile.email || "Usuario"]));
   const creator = detail.created_by ? profileLabels.get(detail.created_by) || null : null;
@@ -105,10 +127,43 @@ export default async function TaskDetailPage({
               <Info label="Creacion">{formatDateTime(detail.created_at)}</Info>
               <Info label="Actualizacion">{formatDateTime(detail.updated_at)}</Info>
               <Info label="Completada">{detail.completed_at ? formatDateTime(detail.completed_at) : "-"}</Info>
-              <Info label="Recurrencia">{detail.is_recurring ? detail.recurrence_rule || "custom" : "No recurrente"}</Info>
+              <Info label="Recurrencia">
+                <div className="flex flex-wrap gap-1">
+                  {detail.is_recurring ? <Badge variant="accent">Recurrente</Badge> : null}
+                  {detail.generated_from_recurring_id ? <Badge variant="info">Ocurrencia</Badge> : null}
+                  {!detail.is_recurring && !detail.generated_from_recurring_id ? <span>No recurrente</span> : null}
+                  {detail.is_recurring ? <Badge variant="muted">{formatRecurrence(detail.recurrence_rule, detail.recurrence_interval)}</Badge> : null}
+                </div>
+              </Info>
+              <Info label="Próxima ocurrencia">{detail.next_occurrence_at || "-"}</Info>
+              <Info label="Fin de recurrencia">{detail.recurrence_ends_at || "-"}</Info>
               <Info label="Descripcion" wide>{detail.description || "-"}</Info>
             </CardContent>
           </Card>
+
+          {(detail.is_recurring || detail.generated_from_recurring_id) ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Serie recurrente</CardTitle>
+                <CardDescription>Ocurrencias generadas manualmente para esta tarea.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {((seriesRows || []) as SeriesTaskRow[]).map((item) => (
+                  <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                    <div>
+                      <Link className="font-medium hover:underline" href={`/tasks/${item.id}`}>{item.title}</Link>
+                      <p className="text-xs text-muted-foreground">{item.due_date || "Sin vencimiento"}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {item.generated_from_recurring_id ? <Badge variant="info">Ocurrencia</Badge> : <Badge variant="accent">Serie</Badge>}
+                      <TaskStatusBadge status={item.status} />
+                      <TaskPriorityBadge priority={item.priority} />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -142,6 +197,15 @@ export default async function TaskDetailPage({
               <CardTitle>Acciones</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+              {detail.is_recurring ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {[30, 60, 90].map((days) => (
+                    <form key={days} action={generateTaskOccurrences.bind(null, detail.id, days, `/tasks/${detail.id}?toast=task_occurrences_generated`)}>
+                      <Button className="w-full" type="submit" variant="outline" size="sm">{days} días</Button>
+                    </form>
+                  ))}
+                </div>
+              ) : null}
               {detail.status !== "completed" ? (
                 <form action={changeTaskStatus.bind(null, detail.id, "completed", detail.client_id, `/tasks/${detail.id}?toast=task_completed`)}>
                   <Button className="w-full" type="submit">Marcar completada</Button>
@@ -159,7 +223,7 @@ export default async function TaskDetailPage({
                 ))}
               </div>
               <ConfirmAction
-                label="Archivar"
+                label={detail.generated_from_recurring_id ? "Cancelar esta ocurrencia" : "Archivar"}
                 variant="destructive"
                 confirmMessage={`Archivar ${detail.title}?`}
                 action={archiveTaskRecord.bind(null, detail.id, detail.client_id, "/tasks?toast=task_archived")}
@@ -206,4 +270,12 @@ function BadgeGroup({ values }: { values: string[] }) {
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+}
+
+function formatRecurrence(rule: string | null, interval?: number | null) {
+  const every = interval && interval > 1 ? `cada ${interval}` : "cada";
+  if (rule === "daily") return `${every} día${interval && interval > 1 ? "s" : ""}`;
+  if (rule === "weekly") return `${every} semana${interval && interval > 1 ? "s" : ""}`;
+  if (rule === "monthly") return `${every} mes${interval && interval > 1 ? "es" : ""}`;
+  return `${every} ${interval && interval > 1 ? "días" : "día"}`;
 }

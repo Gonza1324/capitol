@@ -27,6 +27,9 @@ const defaults: TaskFormValues = {
   origin_id: "",
   is_recurring: false,
   recurrence_rule: null,
+  recurrence_interval: 1,
+  recurrence_ends_at: "",
+  recurrence_count: null,
   initial_comment: ""
 };
 
@@ -57,6 +60,9 @@ export function TaskForm({
       origin_type: task?.origin_type || "",
       origin_id: task?.origin_id || "",
       recurrence_rule: task?.recurrence_rule || null,
+      recurrence_interval: task?.recurrence_interval || 1,
+      recurrence_ends_at: task?.recurrence_ends_at || "",
+      recurrence_count: task?.recurrence_count || null,
       initial_comment: ""
     }
   });
@@ -103,7 +109,18 @@ export function TaskForm({
           Recurrente
         </label>
         {isRecurring ? (
-          <SelectField label="Regla de recurrencia" options={recurrenceRules} error={form.formState.errors.recurrence_rule?.message} {...form.register("recurrence_rule")} />
+          <>
+            <SelectField label="Regla de recurrencia" options={recurrenceRules} error={form.formState.errors.recurrence_rule?.message} {...form.register("recurrence_rule")} />
+            <Field label="Cada">
+              <Input type="number" min={1} max={365} {...form.register("recurrence_interval")} />
+            </Field>
+            <Field label="Finaliza el">
+              <Input type="date" {...form.register("recurrence_ends_at")} />
+            </Field>
+            <Field label="Cantidad maxima">
+              <Input type="number" min={1} max={200} placeholder="Sin limite" {...form.register("recurrence_count")} />
+            </Field>
+          </>
         ) : null}
         <Field label="Descripcion" wide>
           <Textarea {...form.register("description")} />

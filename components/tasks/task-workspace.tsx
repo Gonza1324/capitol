@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Check, Eye, KanbanSquare, List, Pencil } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Check, KanbanSquare, List, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,9 @@ export type TaskListRow = {
   due_date: string | null;
   created_by_name: string | null;
   updated_at: string;
+  is_recurring: boolean;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   assignees: { id: string; label: string }[];
 };
 
@@ -133,6 +136,7 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
           <div className="min-w-[32rem] max-w-3xl">
             <Link href={`/tasks/${row.original.id}`} className="font-medium hover:underline">{row.original.title}</Link>
             <p className="mt-1 text-xs text-muted-foreground">{row.original.client_name || "Sin cliente"}</p>
+            <RecurrenceBadges task={row.original} />
             {isOverdue(row.original.due_date, row.original.status) ? <p className="mt-1 text-xs text-destructive">Vencida</p> : null}
           </div>
         )
@@ -153,7 +157,6 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         header: "Acciones",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button asChild variant="outline" size="icon" title="Ver detalle" aria-label="Ver detalle"><Link href={`/tasks/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
             <Button asChild variant="outline" size="icon" title="Editar" aria-label="Editar"><Link href={`/tasks/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
             {row.original.status !== "completed" ? (
               <Button size="icon" variant="outline" title="Completar" aria-label="Completar" disabled={isPending} onClick={() => startTransition(async () => { await changeTaskStatus(row.original.id, "completed", row.original.client_id, "/tasks?toast=task_completed"); })}>
@@ -332,6 +335,7 @@ function TaskCard({ task }: { task: TaskListRow }) {
     <div className={`rounded-md border p-3 ${isOverdue(task.due_date, task.status) ? "border-destructive/50" : ""}`}>
       <Link href={`/tasks/${task.id}`} className="text-sm font-medium hover:underline">{task.title}</Link>
       <p className="mt-1 text-xs text-muted-foreground">{task.client_name || "Sin cliente"}</p>
+      <RecurrenceBadges task={task} />
       <div className="mt-3 flex flex-wrap gap-1">
         <TaskPriorityBadge priority={task.priority} />
         {task.due_date ? <Badge variant={isOverdue(task.due_date, task.status) ? "warning" : "muted"}>{task.due_date}</Badge> : null}
@@ -349,6 +353,17 @@ function TaskCard({ task }: { task: TaskListRow }) {
       >
         {taskStatuses.map((status) => <option key={status} value={status}>{formatTaskStatus(status)}</option>)}
       </select>
+    </div>
+  );
+}
+
+function RecurrenceBadges({ task }: { task: TaskListRow }) {
+  if (!task.is_recurring && !task.generated_from_recurring_id) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {task.is_recurring ? <Badge variant="accent">Recurrente</Badge> : null}
+      {task.generated_from_recurring_id ? <Badge variant="info">Ocurrencia</Badge> : null}
+      {task.next_occurrence_at ? <Badge variant="muted">Próxima {task.next_occurrence_at}</Badge> : null}
     </div>
   );
 }

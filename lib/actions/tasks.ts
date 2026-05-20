@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { buildOccurrenceDates, isRecurrenceRule, normalizeHorizon } from "@/lib/recurrence";
 import { taskCommentSchema, taskPriorities, taskSchema, type TaskCommentValues, type TaskFormValues, type TaskPriority, type TaskStatus } from "@/lib/validators/task";
 import { assertInternalRole, getCurrentProfile, logActivity } from "./helpers";
 
@@ -17,6 +18,10 @@ function taskColumns(values: TaskFormValues, userId: string) {
     origin_id: values.origin_id,
     is_recurring: values.is_recurring,
     recurrence_rule: values.is_recurring ? values.recurrence_rule : null,
+    recurrence_interval: values.is_recurring ? values.recurrence_interval || 1 : 1,
+    recurrence_ends_at: values.is_recurring ? values.recurrence_ends_at : null,
+    recurrence_count: values.is_recurring ? values.recurrence_count : null,
+    next_occurrence_at: null,
     completed_at: values.status === "completed" ? new Date().toISOString() : null,
     updated_by: userId
   };
@@ -273,6 +278,96 @@ export async function archiveTaskRecord(id: string, clientId?: string | null, re
   redirect(redirectTo || (relatedClientId ? `/clients/${relatedClientId}?toast=task_archived` : "/tasks?toast=task_archived"));
 }
 
+export async function generateTaskOccurrences(taskId: string, horizonDays = 30, redirectTo?: string) {
+  const { supabase, user, profile } = await getCurrentProfile();
+  assertInternalRole(profile?.role);
+
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("id", taskId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  const parent = task as RecurringTaskRow | null;
+  if (!parent || !parent.is_recurring || !isRecurrenceRule(parent.recurrence_rule) || !parent.due_date) {
+    throw new Error("La tarea no tiene una recurrencia valida para generar ocurrencias.");
+  }
+
+  const horizon = normalizeHorizon(horizonDays);
+  const dates = buildOccurrenceDates({
+    start: new Date(`${parent.due_date}T00:00:00`),
+    rule: parent.recurrence_rule,
+    interval: parent.recurrence_interval,
+    horizonDays: horizon,
+    endsAt: parent.recurrence_ends_at ? new Date(`${parent.recurrence_ends_at}T23:59:59`) : null,
+    count: parent.recurrence_count
+  }).map((date) => date.toISOString().slice(0, 10));
+
+  const { data: existingRows } = await supabase
+    .from("tasks")
+    .select("due_date")
+    .eq("generated_from_recurring_id", parent.id)
+    .is("deleted_at", null);
+  const existingDates = new Set(((existingRows || []) as Array<{ due_date: string | null }>).map((row) => row.due_date).filter(Boolean));
+  const newDates = dates.filter((date) => !existingDates.has(date));
+
+  if (!newDates.length) {
+    redirect(redirectTo || `/tasks/${taskId}?toast=recurrence_no_new_occurrences`);
+  }
+
+  const { data: assignees } = await supabase.from("task_assignees").select("user_id").eq("task_id", parent.id);
+  const assigneeIds = ((assignees || []) as Array<{ user_id: string }>).map((row) => row.user_id);
+
+  const { data: inserted, error } = await supabase
+    .from("tasks")
+    .insert(newDates.map((dueDate) => ({
+      title: parent.title,
+      description: parent.description,
+      client_id: parent.client_id,
+      status: "pending",
+      priority: parent.priority,
+      due_date: dueDate,
+      origin_type: parent.origin_type,
+      origin_id: parent.origin_id,
+      is_recurring: false,
+      recurrence_rule: null,
+      recurrence_interval: 1,
+      recurrence_ends_at: null,
+      recurrence_count: null,
+      parent_recurring_id: parent.id,
+      generated_from_recurring_id: parent.id,
+      created_by: user.id,
+      updated_by: user.id
+    })))
+    .select("id, due_date");
+
+  if (error) throw new Error(error.message);
+
+  const insertedRows = (inserted || []) as Array<{ id: string; due_date: string | null }>;
+  if (assigneeIds.length && insertedRows.length) {
+    await supabase.from("task_assignees").insert(
+      insertedRows.flatMap((row) => assigneeIds.map((userId) => ({ task_id: row.id, user_id: userId })))
+    );
+  }
+
+  const nextOccurrence = insertedRows.map((row) => row.due_date).filter(Boolean).sort()[0] || dates.find((date) => date > new Date().toISOString().slice(0, 10)) || null;
+  await supabase.from("tasks").update({ next_occurrence_at: nextOccurrence, updated_by: user.id }).eq("id", parent.id);
+
+  await logActivity({
+    supabase,
+    actorId: user.id,
+    action: "task_occurrences_generated",
+    entityType: "task",
+    entityId: parent.id,
+    metadata: { horizon_days: horizon, generated_count: insertedRows.length }
+  });
+
+  revalidateTaskPaths(parent.id, parent.client_id);
+  insertedRows.forEach((row) => revalidatePath(`/tasks/${row.id}`));
+  redirect(redirectTo || `/tasks/${taskId}?toast=task_occurrences_generated`);
+}
+
 export async function createTaskComment(taskId: string, payload: TaskCommentValues) {
   const values = taskCommentSchema.parse(payload);
   const { supabase, user, profile } = await getCurrentProfile();
@@ -344,3 +439,20 @@ function revalidateTaskPaths(taskId: string, clientId?: string | null) {
   revalidatePath("/dashboard");
   if (clientId) revalidatePath(`/clients/${clientId}`);
 }
+
+type RecurringTaskRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  client_id: string | null;
+  status: string;
+  priority: string;
+  due_date: string | null;
+  origin_type: string | null;
+  origin_id: string | null;
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  recurrence_interval: number | null;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+};

@@ -36,7 +36,10 @@ const defaults: InternalCalendarEventValues = {
   task_id: "",
   assigned_to: "",
   is_recurring: false,
-  recurrence_rule: null
+  recurrence_rule: null,
+  recurrence_interval: 1,
+  recurrence_ends_at: "",
+  recurrence_count: null
 };
 
 export function InternalCalendarEventForm({
@@ -76,7 +79,10 @@ export function InternalCalendarEventForm({
       stakeholder_id: event?.stakeholder_id || "",
       task_id: event?.task_id || "",
       assigned_to: event?.assigned_to || "",
-      recurrence_rule: event?.recurrence_rule || null
+      recurrence_rule: event?.recurrence_rule || null,
+      recurrence_interval: event?.recurrence_interval || 1,
+      recurrence_ends_at: toDateTimeLocal(event?.recurrence_ends_at),
+      recurrence_count: event?.recurrence_count || null
     }
   });
   const clientId = form.watch("client_id");
@@ -91,7 +97,8 @@ export function InternalCalendarEventForm({
         await action({
           ...values,
           start_at: toIso(values.start_at),
-          end_at: values.end_at ? toIso(values.end_at) : null
+          end_at: values.end_at ? toIso(values.end_at) : null,
+          recurrence_ends_at: values.recurrence_ends_at ? toIso(values.recurrence_ends_at) : null
         });
       } catch (error) {
         const digest = typeof error === "object" && error && "digest" in error ? String(error.digest) : "";
@@ -130,7 +137,18 @@ export function InternalCalendarEventForm({
           Recurrente
         </label>
         {isRecurring ? (
-          <SelectField label="Regla de recurrencia" options={internalCalendarRecurrenceRules} error={form.formState.errors.recurrence_rule?.message} {...form.register("recurrence_rule")} />
+          <>
+            <SelectField label="Regla de recurrencia" options={internalCalendarRecurrenceRules} error={form.formState.errors.recurrence_rule?.message} {...form.register("recurrence_rule")} />
+            <Field label="Cada">
+              <Input type="number" min={1} max={365} {...form.register("recurrence_interval")} />
+            </Field>
+            <Field label="Finaliza el">
+              <Input type="datetime-local" {...form.register("recurrence_ends_at")} />
+            </Field>
+            <Field label="Cantidad maxima">
+              <Input type="number" min={1} max={200} placeholder="Sin limite" {...form.register("recurrence_count")} />
+            </Field>
+          </>
         ) : null}
         <Field label="Ubicacion">
           <Input {...form.register("location")} />

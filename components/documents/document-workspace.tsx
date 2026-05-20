@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Archive, ExternalLink, Eye, Pencil } from "lucide-react";
+import { Archive, ExternalLink, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -77,7 +77,6 @@ function DocumentTable({ documents }: { documents: DocumentListRow[] }) {
     { header: "Tamaño", cell: ({ row }) => formatSize(row.original.size || row.original.size_bytes) },
     { header: "Acciones", cell: ({ row }) => (
       <div className="flex gap-2">
-        <Button asChild size="sm" variant="outline"><Link href={`/documents/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
         {row.original.open_url ? <Button asChild size="sm" variant="outline"><a href={row.original.open_url} target="_blank"><ExternalLink className="h-4 w-4" /></a></Button> : null}
         {row.original.source_type === "upload" && row.original.external_url ? <Button asChild size="sm" variant="outline"><a href={row.original.external_url} target="_blank">Link</a></Button> : null}
         <Button asChild size="sm" variant="outline"><Link href={`/documents/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>

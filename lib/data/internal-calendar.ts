@@ -26,6 +26,12 @@ export type InternalCalendarEventRow = {
   sync_status: string;
   recurrence_rule: string | null;
   is_recurring: boolean;
+  recurrence_interval: number | null;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+  parent_recurring_id: string | null;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   created_at: string;
   updated_at: string;
   clients?: { id: string; name: string } | { id: string; name: string }[] | null;

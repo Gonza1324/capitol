@@ -46,6 +46,8 @@ type CalendarItem = {
   responsibleIds?: string[];
   interactionId?: string | null;
   taskId?: string | null;
+  isRecurring?: boolean;
+  generatedFromRecurringId?: string | null;
 };
 
 export default async function InternalCalendarPage({
@@ -94,7 +96,9 @@ export default async function InternalCalendarPage({
         responsibleId: event.assigned_to,
         responsibleIds: event.assigned_to ? [event.assigned_to] : [],
         interactionId: event.interaction_id,
-        taskId: event.task_id
+        taskId: event.task_id,
+        isRecurring: event.is_recurring,
+        generatedFromRecurringId: event.generated_from_recurring_id
       };
     }),
     ...taskDeadlines.map((task) => {
@@ -249,6 +253,8 @@ function EventListCard({ title, items, empty, danger = false }: { title: string;
               <div className="flex flex-wrap justify-end gap-1">
                 <InternalCalendarTypeBadge type={item.type} />
                 <InternalCalendarStatusBadge status={item.status} />
+                {item.isRecurring ? <Badge variant="accent">Recurrente</Badge> : null}
+                {item.generatedFromRecurringId ? <Badge variant="info">Ocurrencia</Badge> : null}
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">

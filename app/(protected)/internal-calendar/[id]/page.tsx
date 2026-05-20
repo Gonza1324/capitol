@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { archiveInternalCalendarEvent, changeInternalCalendarEventStatus, createInteractionFromInternalCalendarEvent } from "@/lib/actions/internal-calendar";
+import { archiveInternalCalendarEvent, changeInternalCalendarEventStatus, createInteractionFromInternalCalendarEvent, generateInternalCalendarOccurrences } from "@/lib/actions/internal-calendar";
 import { firstRelation } from "@/lib/data/interactions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,12 +37,27 @@ type EventDetail = {
   sync_status: string;
   recurrence_rule: string | null;
   is_recurring: boolean;
+  recurrence_interval: number | null;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+  parent_recurring_id: string | null;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   clients?: { id: string; name: string } | { id: string; name: string }[] | null;
   contacts?: { id: string; full_name: string } | { id: string; full_name: string }[] | null;
   stakeholders?: { id: string; full_name: string } | { id: string; full_name: string }[] | null;
   tasks?: { id: string; title: string } | { id: string; title: string }[] | null;
   interactions?: { id: string; title: string } | { id: string; title: string }[] | null;
   profiles?: { id: string; full_name: string | null; email: string | null } | { id: string; full_name: string | null; email: string | null }[] | null;
+};
+
+type SeriesEventRow = {
+  id: string;
+  title: string;
+  status: string;
+  event_type: string;
+  start_at: string;
+  generated_from_recurring_id: string | null;
 };
 
 export default async function InternalCalendarEventDetailPage({
@@ -72,6 +87,13 @@ export default async function InternalCalendarEventDetailPage({
   if (!event) notFound();
 
   const detail = event as unknown as EventDetail;
+  const seriesRootId = detail.generated_from_recurring_id || detail.id;
+  const { data: seriesRows } = await supabase
+    .from("internal_calendar_events")
+    .select("id, title, status, event_type, start_at, generated_from_recurring_id")
+    .or(`id.eq.${seriesRootId},generated_from_recurring_id.eq.${seriesRootId}`)
+    .is("deleted_at", null)
+    .order("start_at", { ascending: true });
   const client = firstRelation(detail.clients);
   const contact = firstRelation(detail.contacts);
   const stakeholder = firstRelation(detail.stakeholders);
@@ -113,7 +135,16 @@ export default async function InternalCalendarEventDetailPage({
             <Info label="Interaccion">{interaction ? <Link className="text-primary underline" href={`/interactions/${interaction.id}`}>{interaction.title}</Link> : "-"}</Info>
             <Info label="Ubicacion">{detail.location || "-"}</Info>
             <Info label="Link de reunion">{detail.meeting_url ? <a className="text-primary underline" href={detail.meeting_url} target="_blank" rel="noreferrer">Abrir link</a> : "-"}</Info>
-            <Info label="Recurrencia">{detail.is_recurring ? detail.recurrence_rule || "Configurada" : "No"}</Info>
+            <Info label="Recurrencia">
+              <div className="flex flex-wrap gap-1">
+                {detail.is_recurring ? <Badge variant="accent">Recurrente</Badge> : null}
+                {detail.generated_from_recurring_id ? <Badge variant="info">Ocurrencia</Badge> : null}
+                {!detail.is_recurring && !detail.generated_from_recurring_id ? <span>No</span> : null}
+                {detail.is_recurring ? <Badge variant="muted">{formatRecurrence(detail.recurrence_rule, detail.recurrence_interval)}</Badge> : null}
+              </div>
+            </Info>
+            <Info label="Próxima ocurrencia">{detail.next_occurrence_at ? formatDateTime(detail.next_occurrence_at) : "-"}</Info>
+            <Info label="Fin de recurrencia">{detail.recurrence_ends_at ? formatDateTime(detail.recurrence_ends_at) : "-"}</Info>
             <Info label="Descripcion" wide>{detail.description || "-"}</Info>
             <Info label="Notas" wide>{detail.notes || "-"}</Info>
           </CardContent>
@@ -123,6 +154,15 @@ export default async function InternalCalendarEventDetailPage({
           <Card>
             <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
             <CardContent className="space-y-2">
+              {detail.is_recurring ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {[30, 60, 90].map((days) => (
+                    <form key={days} action={generateInternalCalendarOccurrences.bind(null, detail.id, days, `/internal-calendar/${detail.id}?toast=internal_calendar_occurrences_generated`)}>
+                      <Button type="submit" className="w-full" variant="outline" size="sm">{days} días</Button>
+                    </form>
+                  ))}
+                </div>
+              ) : null}
               <form action={changeInternalCalendarEventStatus.bind(null, detail.id, "completed", `/internal-calendar/${detail.id}?toast=internal_calendar_event_completed`)}>
                 <Button type="submit" className="w-full" variant="outline">Marcar completado</Button>
               </form>
@@ -133,13 +173,31 @@ export default async function InternalCalendarEventDetailPage({
                 <Button type="submit" className="w-full" disabled={Boolean(interaction)}>Registrar interacción</Button>
               </form>
               <ConfirmAction
-                label="Cancelar evento"
+                label={detail.generated_from_recurring_id ? "Cancelar esta ocurrencia" : "Cancelar evento"}
                 variant="destructive"
                 confirmMessage={`Cancelar ${detail.title}?`}
                 action={archiveInternalCalendarEvent.bind(null, detail.id, "/internal-calendar?toast=internal_calendar_event_cancelled")}
               />
             </CardContent>
           </Card>
+          {(detail.is_recurring || detail.generated_from_recurring_id) ? (
+            <Card>
+              <CardHeader><CardTitle>Serie</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {((seriesRows || []) as SeriesEventRow[]).map((item) => (
+                  <div key={item.id} className="rounded-md border px-3 py-2 text-sm">
+                    <Link className="font-medium hover:underline" href={`/internal-calendar/${item.id}`}>{item.title}</Link>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(item.start_at)}</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {item.generated_from_recurring_id ? <Badge variant="info">Ocurrencia</Badge> : <Badge variant="accent">Serie</Badge>}
+                      <InternalCalendarTypeBadge type={item.event_type} />
+                      <InternalCalendarStatusBadge status={item.status} />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader><CardTitle>Actividad</CardTitle></CardHeader>
             <CardContent className="space-y-2">
@@ -177,4 +235,12 @@ function formatDateTime(value: string) {
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function formatRecurrence(rule: string | null, interval?: number | null) {
+  const every = interval && interval > 1 ? `cada ${interval}` : "cada";
+  if (rule === "daily") return `${every} día${interval && interval > 1 ? "s" : ""}`;
+  if (rule === "weekly") return `${every} semana${interval && interval > 1 ? "s" : ""}`;
+  if (rule === "monthly") return `${every} mes${interval && interval > 1 ? "es" : ""}`;
+  return `${every} ${interval && interval > 1 ? "días" : "día"}`;
 }

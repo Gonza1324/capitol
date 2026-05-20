@@ -71,6 +71,12 @@ export type TaskRow = {
   source: string | null;
   is_recurring: boolean;
   recurrence_rule: string | null;
+  recurrence_interval: number;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+  parent_recurring_id: string | null;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   comments: string | null;
   created_by: string | null;
   updated_by: string | null;
@@ -151,6 +157,12 @@ export type InternalCalendarEventRow = {
   last_synced_at: string | null;
   recurrence_rule: string | null;
   is_recurring: boolean;
+  recurrence_interval: number;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+  parent_recurring_id: string | null;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

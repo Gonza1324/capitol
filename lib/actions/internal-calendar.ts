@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assertInternalRole, getCurrentProfile, logActivity } from "@/lib/actions/helpers";
+import { buildOccurrenceDates, isRecurrenceRule, normalizeHorizon } from "@/lib/recurrence";
 import { internalCalendarEventSchema, type InternalCalendarEventValues, type InternalCalendarStatus } from "@/lib/validators/internal-calendar";
 
 function eventColumns(values: InternalCalendarEventValues, userId: string) {
@@ -24,6 +25,10 @@ function eventColumns(values: InternalCalendarEventValues, userId: string) {
     assigned_to: values.assigned_to,
     is_recurring: values.is_recurring,
     recurrence_rule: values.is_recurring ? values.recurrence_rule : null,
+    recurrence_interval: values.is_recurring ? values.recurrence_interval || 1 : 1,
+    recurrence_ends_at: values.is_recurring ? values.recurrence_ends_at : null,
+    recurrence_count: values.is_recurring ? values.recurrence_count : null,
+    next_occurrence_at: null,
     timezone: "America/Argentina/Buenos_Aires",
     visibility: "internal",
     source: "internal",
@@ -178,6 +183,110 @@ export async function archiveInternalCalendarEvent(id: string, redirectTo?: stri
   redirect(redirectTo || "/internal-calendar?toast=internal_calendar_event_cancelled");
 }
 
+export async function generateInternalCalendarOccurrences(eventId: string, horizonDays = 30, redirectTo?: string) {
+  const { supabase, user, profile } = await getCurrentProfile();
+  assertInternalRole(profile?.role);
+
+  const { data: event } = await supabase
+    .from("internal_calendar_events")
+    .select("*")
+    .eq("id", eventId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  const parent = event as RecurringInternalCalendarEventRow | null;
+  if (!parent || !parent.is_recurring || !isRecurrenceRule(parent.recurrence_rule)) {
+    throw new Error("El evento no tiene una recurrencia valida para generar ocurrencias.");
+  }
+
+  const horizon = normalizeHorizon(horizonDays);
+  const start = new Date(parent.start_at);
+  const durationMs = parent.end_at ? new Date(parent.end_at).getTime() - start.getTime() : null;
+  const dates = buildOccurrenceDates({
+    start,
+    rule: parent.recurrence_rule,
+    interval: parent.recurrence_interval,
+    horizonDays: horizon,
+    endsAt: parent.recurrence_ends_at ? new Date(parent.recurrence_ends_at) : null,
+    count: parent.recurrence_count
+  });
+
+  const { data: existingRows } = await supabase
+    .from("internal_calendar_events")
+    .select("start_at")
+    .eq("generated_from_recurring_id", parent.id)
+    .is("deleted_at", null);
+  const existingStarts = new Set(((existingRows || []) as Array<{ start_at: string }>).map((row) => new Date(row.start_at).toISOString()));
+  const newDates = dates.filter((date) => !existingStarts.has(date.toISOString()));
+
+  if (!newDates.length) {
+    redirect(redirectTo || `/internal-calendar/${eventId}?toast=recurrence_no_new_occurrences`);
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("internal_calendar_events")
+    .insert(newDates.map((date) => ({
+      title: parent.title,
+      description: parent.description,
+      notes: parent.notes,
+      event_type: parent.event_type,
+      status: "scheduled",
+      start_at: date.toISOString(),
+      end_at: durationMs && durationMs >= 0 ? new Date(date.getTime() + durationMs).toISOString() : null,
+      all_day: parent.all_day,
+      timezone: parent.timezone,
+      location: parent.location,
+      meeting_url: parent.meeting_url,
+      client_id: parent.client_id,
+      contact_id: parent.contact_id,
+      stakeholder_id: parent.stakeholder_id,
+      task_id: parent.task_id,
+      assigned_to: parent.assigned_to,
+      visibility: "internal",
+      source: "internal",
+      sync_status: "not_synced",
+      is_recurring: false,
+      recurrence_rule: null,
+      recurrence_interval: 1,
+      recurrence_ends_at: null,
+      recurrence_count: null,
+      parent_recurring_id: parent.id,
+      generated_from_recurring_id: parent.id,
+      created_by: user.id
+    })))
+    .select("id, start_at");
+
+  if (error) throw new Error(error.message);
+
+  const insertedRows = (inserted || []) as Array<{ id: string; start_at: string }>;
+  const nextOccurrence = insertedRows.map((row) => row.start_at).sort()[0] || dates.find((date) => date.getTime() > Date.now())?.toISOString() || null;
+  await supabase.from("internal_calendar_events").update({ next_occurrence_at: nextOccurrence }).eq("id", parent.id);
+
+  if (parent.assigned_to && parent.assigned_to !== user.id && insertedRows.length) {
+    await supabase.from("notifications").insert({
+      user_id: parent.assigned_to,
+      type: "internal_calendar_event_assigned",
+      title: "Eventos recurrentes generados",
+      body: parent.title,
+      entity_type: "internal_calendar_event",
+      entity_id: parent.id
+    });
+  }
+
+  await logActivity({
+    supabase,
+    actorId: user.id,
+    action: "internal_calendar_occurrences_generated",
+    entityType: "internal_calendar_event",
+    entityId: parent.id,
+    metadata: { horizon_days: horizon, generated_count: insertedRows.length }
+  });
+
+  revalidateInternalCalendarPaths(parent.id, parent.client_id);
+  insertedRows.forEach((row) => revalidatePath(`/internal-calendar/${row.id}`));
+  redirect(redirectTo || `/internal-calendar/${eventId}?toast=internal_calendar_occurrences_generated`);
+}
+
 export async function createInteractionFromInternalCalendarEvent(eventId: string) {
   const { supabase, user, profile } = await getCurrentProfile();
   assertInternalRole(profile?.role);
@@ -284,3 +393,28 @@ function revalidateInternalCalendarPaths(eventId: string, clientId?: string | nu
   revalidatePath("/dashboard");
   if (clientId) revalidatePath(`/clients/${clientId}`);
 }
+
+type RecurringInternalCalendarEventRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  event_type: string;
+  status: string;
+  start_at: string;
+  end_at: string | null;
+  all_day: boolean;
+  timezone: string;
+  location: string | null;
+  meeting_url: string | null;
+  client_id: string | null;
+  contact_id: string | null;
+  stakeholder_id: string | null;
+  task_id: string | null;
+  assigned_to: string | null;
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  recurrence_interval: number | null;
+  recurrence_ends_at: string | null;
+  recurrence_count: number | null;
+};

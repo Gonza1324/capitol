@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Archive, Eye, Pencil, SquareCheckBig } from "lucide-react";
+import { Archive, Pencil, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +127,6 @@ function InteractionTable({ interactions, emptyMessage }: { interactions: Intera
         header: "Acciones",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm"><Link href={`/interactions/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
             <Button asChild variant="outline" size="sm"><Link href={`/interactions/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
             <Button asChild variant="outline" size="sm"><Link href={`/tasks/new?originType=interaction&originId=${row.original.id}&clientId=${row.original.clients[0]?.id || ""}`}><SquareCheckBig className="h-4 w-4" /></Link></Button>
             <Button variant="outline" size="icon" title="Archivar" aria-label="Archivar" disabled={isPending} onClick={() => {

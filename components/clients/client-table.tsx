@@ -8,7 +8,7 @@ import {
   getCoreRowModel,
   useReactTable
 } from "@tanstack/react-table";
-import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Cloud, Eye, Pencil } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Cloud, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { archiveClientRecord } from "@/lib/actions/clients";
@@ -86,9 +86,6 @@ export function ClientTable({
         header: "Acciones",
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/clients/${row.original.id}`}><Eye className="h-4 w-4" /></Link>
-            </Button>
             <Button asChild variant="outline" size="sm">
               <Link href={`/clients/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link>
             </Button>

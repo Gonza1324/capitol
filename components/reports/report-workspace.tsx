@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Archive, Eye, Pencil, SquareCheckBig } from "lucide-react";
+import { Archive, Pencil, SquareCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +85,6 @@ function ReportTable({ reports }: { reports: ReportListRow[] }) {
     { header: "Aprobacion", cell: ({ row }) => row.original.approval_required ? <Badge variant={row.original.approved_at ? "success" : "warning"}>{row.original.approved_at ? "aprobado" : "pendiente"}</Badge> : "-" },
     { header: "Actualizado", cell: ({ row }) => formatDate(row.original.updated_at) },
     { header: "Acciones", cell: ({ row }) => <div className="flex gap-2">
-      <Button asChild size="sm" variant="outline"><Link href={`/reports/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
       <Button asChild size="sm" variant="outline"><Link href={`/reports/${row.original.id}/edit`}><Pencil className="h-4 w-4" /></Link></Button>
       <Button size="sm" variant="outline" disabled={isPending} onClick={() => startTransition(async () => changeReportStatus(row.original.id, "sent", row.original.clients.map((c) => c.id), "/reports?toast=report_sent"))}>Enviado</Button>
       <Button size="sm" variant="outline" disabled={isPending} onClick={() => startTransition(async () => changeReportStatus(row.original.id, "approved", row.original.clients.map((c) => c.id), "/reports?toast=report_approved"))}>Aprobar</Button>

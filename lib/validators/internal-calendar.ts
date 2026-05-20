@@ -18,6 +18,11 @@ const optionalUrl = optionalText.refine((value) => {
   return z.string().url().safeParse(value).success;
 }, "Ingresar una URL valida");
 
+const optionalPositiveInt = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? null : value),
+  z.coerce.number().int().min(1, "Cantidad invalida").max(200, "Cantidad demasiado alta").nullable()
+);
+
 export const internalCalendarEventTypes = [
   "call",
   "meeting",
@@ -51,7 +56,10 @@ export const internalCalendarEventSchema = z
     task_id: optionalUuid,
     assigned_to: optionalUuid,
     is_recurring: z.boolean().default(false),
-    recurrence_rule: z.enum(internalCalendarRecurrenceRules).optional().nullable()
+    recurrence_rule: z.enum(internalCalendarRecurrenceRules).optional().nullable(),
+    recurrence_interval: z.coerce.number().int().min(1, "Intervalo invalido").max(365, "Intervalo demasiado alto").default(1),
+    recurrence_ends_at: optionalText,
+    recurrence_count: optionalPositiveInt
   })
   .refine((value) => !value.end_at || new Date(value.end_at).getTime() >= new Date(value.start_at).getTime(), {
     message: "La fecha de fin no puede ser anterior al inicio",
@@ -60,6 +68,10 @@ export const internalCalendarEventSchema = z
   .refine((value) => !value.is_recurring || Boolean(value.recurrence_rule), {
     message: "Elegir una regla de recurrencia",
     path: ["recurrence_rule"]
+  })
+  .refine((value) => !value.recurrence_ends_at || new Date(value.recurrence_ends_at).getTime() >= new Date(value.start_at).getTime(), {
+    message: "El fin de recurrencia no puede ser anterior al inicio",
+    path: ["recurrence_ends_at"]
   });
 
 export type InternalCalendarEventValues = z.infer<typeof internalCalendarEventSchema>;

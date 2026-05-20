@@ -34,7 +34,18 @@ Desde **Calendario** se puede crear un evento con:
 - Responsable.
 - Recurrencia simple guardada como regla.
 
-La recurrencia queda registrada, pero no genera ocurrencias automáticas en esta fase.
+La recurrencia permite generar ocurrencias manualmente desde el detalle del evento para los próximos 30, 60 o 90 días. No hay cron ni generación automática en segundo plano.
+
+## Recurrencias internas
+
+Las tareas y eventos recurrentes pueden usar reglas simples:
+
+- `daily`
+- `weekly`
+- `monthly`
+- `custom`, entendido como cada N días.
+
+Cada ocurrencia generada queda como un registro independiente, editable y cancelable, pero mantiene relación con la serie original. La app evita duplicar ocurrencias para la misma fecha cuando se vuelve a generar el mismo rango.
 
 ## Crear interacciones desde eventos
 
@@ -86,4 +97,4 @@ En una fase futura, Google Calendar debería sincronizar contra el calendario in
 - Creación o edición de eventos en Google Calendar.
 - Webhooks o background sync.
 - Invitaciones por email.
-- Recurrencia con generación automática de ocurrencias.
+- Recurrencia con generación automática de ocurrencias mediante scheduler.

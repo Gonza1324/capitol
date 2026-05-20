@@ -16,6 +16,9 @@ type RawTask = {
   due_date: string | null;
   created_by: string | null;
   updated_at: string;
+  is_recurring: boolean;
+  generated_from_recurring_id: string | null;
+  next_occurrence_at: string | null;
   clients?: { name: string } | Array<{ name: string }> | null;
   task_assignees?: Array<{ profiles: { id: string; full_name: string | null; email: string | null } | Array<{ id: string; full_name: string | null; email: string | null }> | null }>;
 };
@@ -42,6 +45,9 @@ export default async function TasksPage({
       due_date,
       created_by,
       updated_at,
+      is_recurring,
+      generated_from_recurring_id,
+      next_occurrence_at,
       clients(name),
       task_assignees(profiles(id, full_name, email))
     `)
@@ -62,6 +68,9 @@ export default async function TasksPage({
       due_date: task.due_date,
       created_by_name: task.created_by ? profileLabels.get(task.created_by) || null : null,
       updated_at: task.updated_at,
+      is_recurring: task.is_recurring,
+      generated_from_recurring_id: task.generated_from_recurring_id,
+      next_occurrence_at: task.next_occurrence_at,
       assignees: (task.task_assignees || []).flatMap((item) => {
         const profile = firstRelation(item.profiles);
         return profile ? [{ id: profile.id, label: profile.full_name || profile.email || "Usuario" }] : [];
