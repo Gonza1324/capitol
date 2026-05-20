@@ -4,11 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ContactForm } from "@/components/forms/contact-form";
 import { PageHeader } from "@/components/page-header";
 import { ToastMessage } from "@/components/feedback/toast-message";
 import { ConfirmAction } from "@/components/feedback/confirm-action";
-import { archiveContactRecord, createContactRecord } from "@/lib/actions/contacts";
+import { archiveContactRecord } from "@/lib/actions/contacts";
 import { createClient } from "@/lib/supabase/server";
 import { firstRelation } from "@/lib/data/tasks";
 import { TaskPriorityBadge, TaskStatusBadge, isOverdue } from "@/components/tasks/task-badges";
@@ -231,43 +230,8 @@ export default async function ClientDetailPage({
 
   const detail = client as ClientDetail;
   const history = await getClientHistory(detail.id, detail.name);
-  const industries = (detail.client_industries || []).flatMap((item) => (item.industries ? [item.industries] : []));
-  const interests = (detail.client_interests || []).flatMap((item) => (item.interests ? [{ ...item.interests, priority: item.priority, start_date: item.start_date, end_date: item.end_date }] : []));
-  const assignments = (detail.client_assignments || []).flatMap((item) =>
-    item.profiles
-      ? [{
-          id: item.profiles.id,
-          label: item.profiles.full_name || item.profiles.email || "Usuario",
-          role: item.role
-        }]
-      : []
-  );
   const profileLabels = new Map(((profilesForLabels || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => [profile.id, profile.full_name || profile.email || "Usuario"]));
   const taskRows = (clientTasks || []) as unknown as ClientTaskRow[];
-  const interactionRows = ((clientInteractions || []) as unknown as ClientInteractionRow[]).flatMap((row) => {
-    const interaction = firstRelation(row.interactions);
-    return interaction ? [interaction] : [];
-  });
-  const reportRows = ((clientReports || []) as unknown as ClientReportRow[]).flatMap((row) => {
-    const report = firstRelation(row.reports);
-    return report ? [report] : [];
-  });
-  const alertRows = ((clientAlerts || []) as unknown as ClientAlertRow[]).flatMap((row) => {
-    const alert = firstRelation(row.alerts);
-    return alert ? [alert] : [];
-  });
-  const stakeholderRows = ((clientStakeholders || []) as unknown as ClientStakeholderRow[]).flatMap((row) => {
-    const stakeholder = firstRelation(row.stakeholders);
-    return stakeholder ? [stakeholder] : [];
-  });
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-  const openTasks = taskRows.filter((task) => !["completed", "cancelled"].includes(task.status));
-  const overdueTasks = taskRows.filter((task) => isOverdue(task.due_date, task.status));
-  const latestInteraction = interactionRows.sort((a, b) => (b.interaction_date || "").localeCompare(a.interaction_date || ""))[0];
-  const reportsThisMonth = reportRows.filter((report) => report.sent_at && report.sent_at >= monthStart).length;
-  const recentAlerts = alertRows.filter((alert) => alert.sent_at && daysAgo(alert.sent_at) <= 30).length;
-  const documentCount = history.filter((event) => event.type === "document").length;
-
   return (
     <>
       <ToastMessage code={query.toast} />
@@ -283,52 +247,15 @@ export default async function ClientDetailPage({
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {["Resumen", "Historial", "Contactos", "Tareas", "Calendario", "Calls", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
-          <Badge key={tab} variant={tab === "Resumen" || tab === "Historial" ? "secondary" : "outline"}>{tab}</Badge>
+        {["Tareas", "Calls", "Historial", "Contactos", "Calendario", "Reportes", "Alertas", "Documentos", "Stakeholders"].map((tab) => (
+          <Badge key={tab} variant={tab === "Tareas" ? "secondary" : "outline"}>{tab}</Badge>
         ))}
       </div>
 
       <div className="grid gap-6">
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumen</CardTitle>
-              <CardDescription>Datos generales, estrategia y links externos.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-5 md:grid-cols-2">
-              <Info label="Estado"><Badge variant={detail.status === "active" ? "success" : "secondary"}>{detail.status}</Badge></Info>
-              <Info label="Tipo">{detail.client_type}</Info>
-              <Info label="CUIT / ID fiscal">{detail.tax_id || "-"}</Info>
-              <Info label="Confidencialidad">{detail.confidentiality_level}</Info>
-              <Info label="Inicio">{detail.start_date || "-"}</Info>
-              <Info label="Finalizacion">{detail.end_date || "-"}</Info>
-              <Info label="Website">{detail.website ? <a className="text-primary underline" href={detail.website} target="_blank">{detail.website}</a> : "-"}</Info>
-              <Info label="Drive">{detail.drive_url ? <a className="text-primary underline" href={detail.drive_url} target="_blank">Abrir carpeta</a> : "-"}</Info>
-              <Info label="Rubros"><BadgeGroup values={industries.map((item) => item.name)} /></Info>
-              <Info label="Issues"><BadgeGroup values={interests.map((item) => `${item.name} (${item.priority})`)} /></Info>
-              <Info label="Responsables"><BadgeGroup values={assignments.map((item) => item.role ? `${item.label} - ${item.role}` : item.label)} /></Info>
-              <Info label="Actualizado">{formatDate(detail.updated_at)}</Info>
-              <Info label="Descripcion" wide>{detail.description || "-"}</Info>
-              <Info label="Perfil estrategico" wide>{detail.strategic_profile || "-"}</Info>
-              <Info label="Notas generales" wide>{detail.general_notes || "-"}</Info>
-            </CardContent>
-          </Card>
-
-          <ClientExecutiveSummary
-            status={detail.status}
-            clientType={detail.client_type}
-            industries={industries.map((item) => item.name)}
-            interests={interests.slice(0, 5).map((item) => `${item.name} (${item.priority})`)}
-            assignments={assignments.map((item) => item.role ? `${item.label} - ${item.role}` : item.label)}
-            latestInteraction={latestInteraction?.interaction_date || null}
-            openTasks={openTasks.length}
-            overdueTasks={overdueTasks.length}
-            reportsThisMonth={reportsThisMonth}
-            recentAlerts={recentAlerts}
-            documents={documentCount}
-            stakeholders={stakeholderRows.length}
-          />
-
+          <ClientTasksSection clientId={detail.id} tasks={taskRows} />
+          <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
           <WorkedOnSection events={history} />
           <ClientHistoryTimeline events={history} />
 
@@ -367,22 +294,9 @@ export default async function ClientDetailPage({
               ) : (
                 <p className="rounded-md border p-4 text-sm text-muted-foreground">Este cliente todavia no tiene contactos.</p>
               )}
-              <div className="rounded-md border p-4">
-                <h3 className="mb-4 font-medium">Nuevo contacto</h3>
-                <ContactForm
-                  action={async (values) => {
-                    "use server";
-                    await createContactRecord(values, `/clients/${detail.id}?toast=contact_created`);
-                  }}
-                  clients={[{ id: detail.id, name: detail.name }]}
-                  lockedClientId={detail.id}
-                />
-              </div>
             </CardContent>
           </Card>
 
-          <ClientTasksSection clientId={detail.id} tasks={taskRows} />
-          <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
           <ClientInternalCalendarEventsSection clientId={detail.id} events={(clientInternalCalendarEvents || []) as unknown as ClientInternalCalendarEventRow[]} tasks={taskRows} />
           <ClientReportsSection clientId={detail.id} reports={(clientReports || []) as unknown as ClientReportRow[]} profileLabels={profileLabels} />
           <ClientAlertsSection clientId={detail.id} alerts={(clientAlerts || []) as unknown as ClientAlertRow[]} profileLabels={profileLabels} />
@@ -392,83 +306,6 @@ export default async function ClientDetailPage({
 
       </div>
     </>
-  );
-}
-
-function Info({ label, children, wide = false }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return (
-    <div className={wide ? "md:col-span-2" : ""}>
-      <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">{label}</p>
-      <div className="text-sm">{children}</div>
-    </div>
-  );
-}
-
-function BadgeGroup({ values }: { values: string[] }) {
-  if (!values.length) return <span className="text-muted-foreground">-</span>;
-  return <div className="flex flex-wrap gap-1">{values.map((value) => <Badge key={value} variant="muted">{value}</Badge>)}</div>;
-}
-
-function ClientExecutiveSummary({
-  status,
-  clientType,
-  industries,
-  interests,
-  assignments,
-  latestInteraction,
-  openTasks,
-  overdueTasks,
-  reportsThisMonth,
-  recentAlerts,
-  documents,
-  stakeholders
-}: {
-  status: string;
-  clientType: string;
-  industries: string[];
-  interests: string[];
-  assignments: string[];
-  latestInteraction: string | null;
-  openTasks: number;
-  overdueTasks: number;
-  reportsThisMonth: number;
-  recentAlerts: number;
-  documents: number;
-  stakeholders: number;
-}) {
-  const cards = [
-    { label: "Estado", value: status },
-    { label: "Tipo", value: clientType },
-    { label: "Ultima interaccion", value: latestInteraction || "-" },
-    { label: "Tareas abiertas", value: openTasks },
-    { label: "Tareas vencidas", value: overdueTasks, warning: overdueTasks > 0 },
-    { label: "Reportes mes", value: reportsThisMonth },
-    { label: "Alertas recientes", value: recentAlerts, warning: recentAlerts > 0 },
-    { label: "Documentos", value: documents },
-    { label: "Stakeholders", value: stakeholders }
-  ];
-  return (
-    <Card className="print:shadow-none">
-      <CardHeader>
-        <CardTitle>Resumen ejecutivo</CardTitle>
-        <CardDescription>Indicadores rapidos para entender estado, actividad y seguimiento.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid gap-3 md:grid-cols-3">
-          {cards.map((card) => (
-            <div key={card.label} className="rounded-md border p-3">
-              <p className="text-xs font-medium uppercase text-muted-foreground">{card.label}</p>
-              <p className={card.warning ? "mt-1 text-xl font-semibold text-destructive" : "mt-1 text-xl font-semibold"}>{card.value}</p>
-            </div>
-          ))}
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Info label="Rubros"><BadgeGroup values={industries} /></Info>
-          <Info label="Issues principales"><BadgeGroup values={interests} /></Info>
-          <Info label="Responsables"><BadgeGroup values={assignments} /></Info>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
@@ -785,14 +622,6 @@ function ClientStakeholdersSection({ clientId, stakeholders }: { clientId: strin
   );
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
-}
-
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
-}
-
-function daysAgo(value: string) {
-  return (Date.now() - new Date(value).getTime()) / 1000 / 60 / 60 / 24;
 }

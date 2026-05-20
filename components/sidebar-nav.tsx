@@ -11,15 +11,14 @@ import {
   ChevronDown,
   Contact,
   FileText,
-  Gauge,
   Library,
   Search,
-  SquareCheckBig
+  SquareCheckBig,
+  type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const topItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/clients", label: "Clientes", icon: BriefcaseBusiness }
 ];
 
@@ -46,7 +45,7 @@ function SidebarLink({
 }: {
   href: string;
   label: string;
-  icon: typeof Gauge;
+  icon: LucideIcon;
   active: boolean;
 }) {
   return (
