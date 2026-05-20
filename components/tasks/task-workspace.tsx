@@ -140,11 +140,16 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
           </div>
         )
       },
-      { header: "Estado", cell: ({ row }) => <TaskStatusSelect task={row.original} /> },
+      {
+        header: "Estado",
+        cell: ({ row }) => <TaskStatusSelect task={row.original} />,
+        meta: { className: "w-28" }
+      },
       {
         id: "priority",
         header: () => <SortableHeader label="Prioridad" active={sort?.key === "priority"} direction={sort?.direction} onClick={() => toggleSort("priority")} />,
-        cell: ({ row }) => <TaskPrioritySelect task={row.original} />
+        cell: ({ row }) => <TaskPrioritySelect task={row.original} />,
+        meta: { className: "w-24" }
       },
       {
         id: "client",
@@ -192,20 +197,24 @@ function TaskTable({ tasks, emptyMessage }: { tasks: TaskListRow[]; emptyMessage
         <thead className="border-b bg-muted/50 text-left">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => <th key={header.id} className="px-4 py-3 font-medium">{flexRender(header.column.columnDef.header, header.getContext())}</th>)}
+              {headerGroup.headers.map((header) => <th key={header.id} className={`px-4 py-3 font-medium ${getColumnClassName(header.column.columnDef)}`}>{flexRender(header.column.columnDef.header, header.getContext())}</th>)}
             </tr>
           ))}
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id} className="border-b align-top last:border-0">
-              {row.getVisibleCells().map((cell) => <td key={cell.id} className="px-4 py-3">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
+              {row.getVisibleCells().map((cell) => <td key={cell.id} className={`px-4 py-3 ${getColumnClassName(cell.column.columnDef)}`}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
   );
+}
+
+function getColumnClassName(columnDef: ColumnDef<TaskListRow>) {
+  return (columnDef.meta as { className?: string } | undefined)?.className || "";
 }
 
 function SortableHeader({
@@ -271,7 +280,7 @@ function TaskStatusSelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className={`h-8 w-32 rounded-md border px-2 text-xs font-medium ${taskStatusSelectClass(task.status)}`}
+      className={`h-8 w-24 rounded-md border px-2 text-xs font-medium ${taskStatusSelectClass(task.status)}`}
       value={task.status}
       disabled={isPending}
       aria-label={`Cambiar estado de ${task.title}`}
@@ -299,7 +308,7 @@ function TaskPrioritySelect({ task }: { task: TaskListRow }) {
   const [isPending, startTransition] = useTransition();
   return (
     <select
-      className={`h-8 w-24 rounded-md border px-2 text-xs font-medium ${taskPrioritySelectClass(task.priority)}`}
+      className={`h-8 w-20 rounded-md border px-2 text-xs font-medium ${taskPrioritySelectClass(task.priority)}`}
       value={task.priority}
       disabled={isPending}
       aria-label={`Cambiar prioridad de ${task.title}`}
