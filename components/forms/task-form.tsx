@@ -88,7 +88,7 @@ export function TaskForm({
         <Field label="Titulo" error={form.formState.errors.title?.message}>
           <Input {...form.register("title")} />
         </Field>
-        <Field label="Cliente opcional">
+        <Field label="Cliente">
           <select
             {...form.register("client_id")}
             disabled={Boolean(lockedClientId)}
@@ -104,10 +104,12 @@ export function TaskForm({
         <Field label="Fecha limite">
           <Input type="date" {...form.register("due_date")} />
         </Field>
-        <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-          <input type="checkbox" {...form.register("is_recurring")} />
-          Recurrente
-        </label>
+        <Field label="Recurrencia">
+          <label className="flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3 text-sm">
+            <input type="checkbox" {...form.register("is_recurring")} />
+            Recurrente
+          </label>
+        </Field>
         {isRecurring ? (
           <>
             <SelectField label="Regla de recurrencia" options={recurrenceRules} error={form.formState.errors.recurrence_rule?.message} {...form.register("recurrence_rule")} />
@@ -127,40 +129,19 @@ export function TaskForm({
         </Field>
       </section>
 
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold">Responsables</h2>
-          {form.formState.errors.assignee_ids ? <p className="mt-1 text-xs text-destructive">{form.formState.errors.assignee_ids.message}</p> : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {profiles.map((profile) => {
-            const checked = selectedAssignees.includes(profile.id);
-            return (
-              <label key={profile.id} className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(event) => {
-                    const next = event.target.checked
-                      ? [...selectedAssignees, profile.id]
-                      : selectedAssignees.filter((id) => id !== profile.id);
-                    form.setValue("assignee_ids", next, { shouldDirty: true, shouldValidate: true });
-                  }}
-                />
-                {profile.label}
-              </label>
-            );
-          })}
-          {!profiles.length ? <p className="text-sm text-muted-foreground">No hay usuarios internos disponibles.</p> : null}
-        </div>
+      <section className="space-y-2">
+        <Label>Responsable</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={selectedAssignees[0] || ""}
+          onChange={(event) => form.setValue("assignee_ids", event.target.value ? [event.target.value] : [], { shouldDirty: true, shouldValidate: true })}
+        >
+          <option value="">Sin responsable</option>
+          {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
+        </select>
+        {form.formState.errors.assignee_ids ? <p className="text-xs text-destructive">{form.formState.errors.assignee_ids.message}</p> : null}
+        {!profiles.length ? <p className="text-sm text-muted-foreground">No hay usuarios internos disponibles.</p> : null}
       </section>
-
-      {!task?.id ? (
-        <section className="space-y-2">
-          <Label>Comentario inicial opcional</Label>
-          <Textarea {...form.register("initial_comment")} />
-        </section>
-      ) : null}
 
       {submitError ? <Badge variant="warning">{submitError}</Badge> : null}
       <Button type="submit" disabled={isPending}>

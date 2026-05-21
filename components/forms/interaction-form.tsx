@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { formatInteractionType } from "@/components/interactions/interaction-badges";
 import { interactionSchema, interactionTypes, type InteractionFormValues } from "@/lib/validators/interaction";
 
 type InteractionValue = Partial<InteractionFormValues> & { id?: string };
@@ -233,7 +234,7 @@ function SelectField({
     <div className="space-y-2">
       <Label>{label}</Label>
       <select {...props} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        {options.map((option) => <option key={option} value={option}>{formatInteractionType(option)}</option>)}
       </select>
     </div>
   );
