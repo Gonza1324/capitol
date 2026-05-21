@@ -13,11 +13,13 @@ type ProfileOption = { id: string; label: string };
 export function TaskCreateModal({
   action,
   clients,
-  profiles
+  profiles,
+  lockedClientId
 }: {
   action: (values: TaskFormValues) => Promise<void>;
   clients: ClientOption[];
   profiles: ProfileOption[];
+  lockedClientId?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -36,7 +38,7 @@ export function TaskCreateModal({
               </Button>
             </CardHeader>
             <CardContent className="max-h-[calc(100vh-12rem)] overflow-y-auto pt-6">
-              <TaskForm action={action} clients={clients} profiles={profiles} />
+              <TaskForm action={action} clients={clients} profiles={profiles} lockedClientId={lockedClientId} />
             </CardContent>
           </Card>
         </div>

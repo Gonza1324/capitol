@@ -19,7 +19,9 @@ import {
 import { cn } from "@/lib/utils";
 
 const topItems = [
-  { href: "/clients", label: "Clientes", icon: BriefcaseBusiness }
+  { href: "/clients", label: "Clientes", icon: BriefcaseBusiness },
+  { href: "/tasks", label: "Tareas", icon: SquareCheckBig },
+  { href: "/documents", label: "Entregables", icon: Library }
 ];
 
 const contactItems = [
@@ -28,12 +30,10 @@ const contactItems = [
 ];
 
 const bottomItems = [
-  { href: "/tasks", label: "Tareas", icon: SquareCheckBig },
   { href: "/interactions", label: "Reuniones", icon: CalendarClock },
   { href: "/internal-calendar", label: "Calendario", icon: CalendarDays },
   { href: "/reports", label: "Reportes", icon: FileText },
   { href: "/alerts", label: "Alertas", icon: Bell },
-  { href: "/documents", label: "Entregables", icon: Library },
   { href: "/search", label: "Busqueda", icon: Search }
 ];
 

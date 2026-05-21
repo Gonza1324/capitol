@@ -17,6 +17,8 @@ import { AlertCategoryBadge, AlertUrgencyBadge } from "@/components/alerts/alert
 import { InfluenceBadge, SensitivityBadge, StakeholderTypeBadge, StanceBadge } from "@/components/stakeholders/stakeholder-badges";
 import { EntityDocuments } from "@/components/documents/entity-documents";
 import { formatCalendarEventDate } from "@/components/calendar/calendar-event-card";
+import { TaskCreateModal } from "@/components/tasks/task-create-modal";
+import { createTaskRecord } from "@/lib/actions/tasks";
 import { getClientHistory } from "@/lib/data/client-history";
 
 type ClientDetail = {
@@ -229,6 +231,10 @@ export default async function ClientDetailPage({
   const detail = client as ClientDetail;
   const history = await getClientHistory(detail.id, detail.name);
   const profileLabels = new Map(((profilesForLabels || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => [profile.id, profile.full_name || profile.email || "Usuario"]));
+  const taskProfiles = ((profilesForLabels || []) as Array<{ id: string; full_name: string | null; email: string | null }>).map((profile) => ({
+    id: profile.id,
+    label: profile.full_name || profile.email || "Usuario"
+  }));
   const taskRows = (clientTasks || []) as unknown as ClientTaskRow[];
   return (
     <>
@@ -246,7 +252,7 @@ export default async function ClientDetailPage({
 
       <div className="grid gap-6">
         <div className="space-y-6">
-          <ClientTasksSection clientId={detail.id} tasks={taskRows} />
+          <ClientTasksSection clientId={detail.id} clientName={detail.name} tasks={taskRows} profiles={taskProfiles} />
           <ClientInteractionsSection clientId={detail.id} interactions={(clientInteractions || []) as unknown as ClientInteractionRow[]} />
           <WorkedOnSection events={history} />
 
@@ -335,7 +341,17 @@ function WorkedOnSection({ events }: { events: import("@/lib/data/client-history
   );
 }
 
-function ClientTasksSection({ clientId, tasks }: { clientId: string; tasks: ClientTaskRow[] }) {
+function ClientTasksSection({
+  clientId,
+  clientName,
+  tasks,
+  profiles
+}: {
+  clientId: string;
+  clientName: string;
+  tasks: ClientTaskRow[];
+  profiles: { id: string; label: string }[];
+}) {
   const openTasks = tasks.filter((task) => !["completed", "cancelled"].includes(task.status));
   const completedTasks = tasks.filter((task) => task.status === "completed").slice(0, 5);
 
@@ -346,7 +362,15 @@ function ClientTasksSection({ clientId, tasks }: { clientId: string; tasks: Clie
           <CardTitle>Tareas</CardTitle>
           <CardDescription>Tareas abiertas y completadas recientes asociadas al cliente.</CardDescription>
         </div>
-        <Button asChild><Link href={`/tasks/new?clientId=${clientId}`}>Nueva tarea</Link></Button>
+        <TaskCreateModal
+          action={async (values) => {
+            "use server";
+            await createTaskRecord(values, `/clients/${clientId}?toast=task_created`);
+          }}
+          clients={[{ id: clientId, name: clientName }]}
+          profiles={profiles}
+          lockedClientId={clientId}
+        />
       </CardHeader>
       <CardContent className="space-y-5">
         <TaskGroup title="Abiertas" tasks={openTasks} />
